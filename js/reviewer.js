@@ -113,12 +113,12 @@ async function reviewDocument(action, docId) {
 
 async function loadDocuments() {
   const table = document.querySelector('#documentsTable');
-  table.innerHTML = rowMessage('加载中...', 4);
+  table.innerHTML = rowMessage('加载中...', 5);
   try {
-    const data = await API.listDocuments();
+    const data = await API.listVerifiedDocuments();
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无文档', 4);
+      table.innerHTML = rowMessage('暂无已通过文档', 5);
       return;
     }
     table.innerHTML = documents
@@ -126,7 +126,8 @@ async function loadDocuments() {
         <tr>
           <td title="${escapeHtml(item.source || '')}">${escapeHtml(API.filename(item.source || ''))}</td>
           <td>${Number(item.chunk_count || 0)}</td>
-          <td>${escapeHtml(item.uploaded_at || '-')}</td>
+          <td>${escapeHtml(item.uploaded_by || '-')}</td>
+          <td>${escapeHtml(item.reviewed_at || '-')}</td>
           <td><button class="danger" data-source="${escapeHtml(item.source || '')}">删除</button></td>
         </tr>
       `)
@@ -149,7 +150,7 @@ async function loadDocuments() {
       button.addEventListener('click', () => deleteDocument(button.dataset.source));
     });
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 4);
+    table.innerHTML = rowMessage(briefError(error), 5);
   }
 }
 

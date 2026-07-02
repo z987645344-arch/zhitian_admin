@@ -83,6 +83,7 @@ const API = (() => {
         body: JSON.stringify({ title, content }),
       }),
     listDocuments: () => request('/documents', { method: 'GET' }),
+    listVerifiedDocuments: () => request('/documents/verified', { method: 'GET' }),
     pendingDocuments: () => request('/pending', { method: 'GET' }),
     approveDocument: (docId) => request(`/approve/${encodeURIComponent(docId)}`, { method: 'POST' }),
     rejectDocument: (docId) => request(`/reject/${encodeURIComponent(docId)}`, { method: 'POST' }),
