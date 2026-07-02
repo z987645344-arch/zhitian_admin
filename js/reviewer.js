@@ -53,15 +53,15 @@ async function loadPending() {
 
 async function handlePendingAction(action, docId) {
   if (action === 'preview') {
-    await previewDocument(docId);
+    await previewDocument(docId, '#previewPanel');
     return;
   }
   await reviewDocument(action, docId);
 }
 
-async function previewDocument(docId) {
+async function previewDocument(docId, panelSelector = '#previewPanel') {
   if (!docId) return;
-  const panel = document.querySelector('#previewPanel');
+  const panel = document.querySelector(panelSelector);
   panel.classList.remove('hidden');
   panel.innerHTML = '<p class="muted">加载预览中...</p>';
   try {
@@ -83,7 +83,7 @@ async function previewDocument(docId) {
         `).join('') : '<p class="muted">暂无可预览内容</p>'}
       </div>
     `;
-    document.querySelector('#closePreview').addEventListener('click', () => {
+    panel.querySelector('#closePreview').addEventListener('click', () => {
       panel.classList.add('hidden');
       panel.innerHTML = '';
     });
@@ -131,6 +131,20 @@ async function loadDocuments() {
         </tr>
       `)
       .join('');
+    table.querySelectorAll('tr').forEach((row, index) => {
+      const item = documents[index] || {};
+      const actionCell = row.querySelector('td:last-child');
+      if (!actionCell) return;
+      actionCell.innerHTML = `
+        <div class="actions">
+          <button class="secondary" data-doc-preview="${escapeHtml(item.doc_id || '')}">预览</button>
+          <button class="danger" data-source="${escapeHtml(item.source || '')}">删除</button>
+        </div>
+      `;
+    });
+    table.querySelectorAll('button[data-doc-preview]').forEach((button) => {
+      button.addEventListener('click', () => previewDocument(button.dataset.docPreview, '#documentPreviewPanel'));
+    });
     table.querySelectorAll('button[data-source]').forEach((button) => {
       button.addEventListener('click', () => deleteDocument(button.dataset.source));
     });
