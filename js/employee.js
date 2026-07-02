@@ -86,12 +86,12 @@ async function inputKnowledge(event) {
 
 async function loadDocuments() {
   const table = document.querySelector('#documentsTable');
-  table.innerHTML = rowMessage('加载中...', 3);
+  table.innerHTML = rowMessage('加载中...', 5);
   try {
     const data = await API.listDocuments();
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无文档', 3);
+      table.innerHTML = rowMessage('暂无文档', 5);
       return;
     }
     table.innerHTML = documents
@@ -100,12 +100,56 @@ async function loadDocuments() {
           <td title="${escapeHtml(item.source || '')}">${escapeHtml(API.filename(item.source || ''))}</td>
           <td>${Number(item.chunk_count || 0)}</td>
           <td>${escapeHtml(item.uploaded_at || '-')}</td>
+          <td>${statusBadge(item.trust_level || 'unknown')}</td>
+          <td>${documentAction(item)}</td>
         </tr>
       `)
       .join('');
+    table.querySelectorAll('button[data-source]').forEach((button) => {
+      button.addEventListener('click', () => revokeDocument(button.dataset.source));
+    });
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 3);
+    table.innerHTML = rowMessage(briefError(error), 5);
   }
+}
+
+async function revokeDocument(source) {
+  if (!source) return;
+  if (!confirm(`确认撤销 ${API.filename(source)}？`)) return;
+  try {
+    await API.deleteDocument(source);
+    alert('已撤销，文档已从知识库移除');
+    await loadDocuments();
+  } catch (error) {
+    alert(briefError(error));
+  }
+}
+
+function documentAction(item) {
+  if (item.can_revoke) {
+    return `<button class="danger" data-source="${escapeHtml(item.source || '')}">撤销</button>`;
+  }
+  return `<span class="muted">${statusText(item.trust_level || 'unknown')}</span>`;
+}
+
+function statusBadge(status) {
+  return `<span class="badge ${statusClass(status)}">${statusText(status)}</span>`;
+}
+
+function statusText(status) {
+  const map = {
+    pending: '待审核',
+    verified: '已通过',
+    rejected: '已拒绝',
+    unknown: '未知',
+  };
+  return map[status] || status;
+}
+
+function statusClass(status) {
+  if (status === 'pending') return 'badge-pending';
+  if (status === 'rejected') return 'badge-rejected';
+  return '';
 }
 
 function rowMessage(text, colspan) {

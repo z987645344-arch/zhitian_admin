@@ -86,6 +86,7 @@ const API = (() => {
     pendingDocuments: () => request('/pending', { method: 'GET' }),
     approveDocument: (docId) => request(`/approve/${encodeURIComponent(docId)}`, { method: 'POST' }),
     rejectDocument: (docId) => request(`/reject/${encodeURIComponent(docId)}`, { method: 'POST' }),
+    previewDocument: (docId) => request(`/documents/${encodeURIComponent(docId)}/preview`, { method: 'GET' }),
     deleteDocument: (source) => request(`/documents/${encodeURIComponent(source)}`, { method: 'DELETE' }),
     health: () => request('/health', { method: 'GET' }),
   };

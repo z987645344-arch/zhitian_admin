@@ -35,6 +35,7 @@ async function loadPending() {
           <td>${escapeHtml(item.uploaded_at || '-')}</td>
           <td>
             <div class="actions">
+              <button class="secondary" data-action="preview" data-doc-id="${escapeHtml(item.doc_id || '')}">预览</button>
               <button data-action="approve" data-doc-id="${escapeHtml(item.doc_id || '')}">批准</button>
               <button class="danger" data-action="reject" data-doc-id="${escapeHtml(item.doc_id || '')}">拒绝</button>
             </div>
@@ -43,10 +44,51 @@ async function loadPending() {
       `)
       .join('');
     table.querySelectorAll('button[data-action]').forEach((button) => {
-      button.addEventListener('click', () => reviewDocument(button.dataset.action, button.dataset.docId));
+      button.addEventListener('click', () => handlePendingAction(button.dataset.action, button.dataset.docId));
     });
   } catch (error) {
     table.innerHTML = rowMessage(briefError(error), 5);
+  }
+}
+
+async function handlePendingAction(action, docId) {
+  if (action === 'preview') {
+    await previewDocument(docId);
+    return;
+  }
+  await reviewDocument(action, docId);
+}
+
+async function previewDocument(docId) {
+  if (!docId) return;
+  const panel = document.querySelector('#previewPanel');
+  panel.classList.remove('hidden');
+  panel.innerHTML = '<p class="muted">加载预览中...</p>';
+  try {
+    const data = await API.previewDocument(docId);
+    const chunks = Array.isArray(data.chunks) ? data.chunks : [];
+    panel.innerHTML = `
+      <div class="section-title">
+        <h2>文档预览</h2>
+        <button class="secondary" id="closePreview" type="button">关闭</button>
+      </div>
+      <p class="muted">来源：${escapeHtml(data.source || '-')}</p>
+      <p class="muted">共${chunks.length}段内容</p>
+      <div class="preview-content">
+        ${chunks.length ? chunks.map((chunk, index) => `
+          <section class="preview-chunk">
+            <h3>第${index + 1}段：</h3>
+            <p>${escapeHtml(chunk)}</p>
+          </section>
+        `).join('') : '<p class="muted">暂无可预览内容</p>'}
+      </div>
+    `;
+    document.querySelector('#closePreview').addEventListener('click', () => {
+      panel.classList.add('hidden');
+      panel.innerHTML = '';
+    });
+  } catch (error) {
+    panel.innerHTML = `<p class="message">${escapeHtml(briefError(error))}</p>`;
   }
 }
 
@@ -61,6 +103,9 @@ async function reviewDocument(action, docId) {
     await loadPending();
     await loadDocuments();
     await loadStats();
+    const panel = document.querySelector('#previewPanel');
+    panel.classList.add('hidden');
+    panel.innerHTML = '';
   } catch (error) {
     alert(briefError(error));
   }

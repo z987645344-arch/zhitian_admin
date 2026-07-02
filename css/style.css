@@ -250,6 +250,45 @@ td {
   color: var(--success);
 }
 
+.badge-pending {
+  background: #fff7e6;
+  color: #9a5a00;
+}
+
+.badge-rejected {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.preview-panel {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fbfcff;
+}
+
+.preview-content {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.preview-chunk {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.preview-chunk h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.preview-chunk p {
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(160px, 1fr));
