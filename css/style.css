@@ -289,6 +289,78 @@ td {
   line-height: 1.65;
 }
 
+.knowledge-section {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.knowledge-section h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.knowledge-list {
+  display: grid;
+  gap: 8px;
+}
+
+.knowledge-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.knowledge-item summary {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 110px minmax(240px, 2fr);
+  gap: 12px;
+  padding: 11px 12px;
+  cursor: pointer;
+}
+
+.knowledge-item pre {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding: 12px;
+  white-space: pre-wrap;
+  line-height: 1.65;
+  font-family: inherit;
+  color: var(--text);
+}
+
+.danger-zone {
+  margin-top: 18px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.22);
+  z-index: 10;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-panel {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+  background: #fff;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(160px, 1fr));

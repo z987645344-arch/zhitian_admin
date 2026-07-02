@@ -88,6 +88,12 @@ const API = (() => {
     rejectDocument: (docId) => request(`/reject/${encodeURIComponent(docId)}`, { method: 'POST' }),
     previewDocument: (docId) => request(`/documents/${encodeURIComponent(docId)}/preview`, { method: 'GET' }),
     deleteDocument: (source) => request(`/documents/${encodeURIComponent(source)}`, { method: 'DELETE' }),
+    adminKnowledge: () => request('/admin/knowledge', { method: 'GET' }),
+    adminDeleteMemory: (target, adminSecret) =>
+      request('/admin/delete_memory', {
+        method: 'POST',
+        body: JSON.stringify({ target, admin_secret: adminSecret }),
+      }),
     health: () => request('/health', { method: 'GET' }),
   };
 })();

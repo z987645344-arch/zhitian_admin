@@ -2,6 +2,8 @@ if (API.ensureRole(['reviewer'])) {
   initReviewerPage();
 }
 
+let pendingDangerTarget = '';
+
 function initReviewerPage() {
   document.querySelector('#currentUser').textContent = `当前账号：${localStorage.getItem('username') || '-'}`;
   document.querySelector('#logoutButton').addEventListener('click', () => {
@@ -11,9 +13,16 @@ function initReviewerPage() {
   document.querySelector('#refreshPending').addEventListener('click', loadPending);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
+  document.querySelector('#refreshKnowledge').addEventListener('click', loadKnowledgeBase);
+  document.querySelectorAll('button[data-danger-target]').forEach((button) => {
+    button.addEventListener('click', () => openDangerDialog(button.dataset.dangerTarget));
+  });
+  document.querySelector('#confirmDangerButton').addEventListener('click', confirmDangerOperation);
+  document.querySelector('#cancelDangerButton').addEventListener('click', closeDangerDialog);
   loadPending();
   loadDocuments();
   loadStats();
+  loadKnowledgeBase();
 }
 
 async function loadPending() {
@@ -163,8 +172,110 @@ async function loadStats() {
   }
 }
 
+async function loadKnowledgeBase() {
+  setKnowledgeLoading();
+  try {
+    const data = await API.adminKnowledge();
+    const documents = Array.isArray(data.documents) ? data.documents : [];
+    const manualInputs = Array.isArray(data.manual_inputs) ? data.manual_inputs : [];
+    const memoryFragments = Array.isArray(data.memory_fragments) ? data.memory_fragments : [];
+
+    document.querySelector('#documentsCount').textContent = documents.length;
+    document.querySelector('#manualInputsCount').textContent = manualInputs.length;
+    document.querySelector('#memoryFragmentsCount').textContent = memoryFragments.length;
+    document.querySelector('#knowledgeDocuments').innerHTML = renderKnowledgeItems(
+      documents,
+      (item) => API.filename(item.source || '-'),
+      (item) => item.trust_level || '-',
+      (item) => item.chunks || []
+    );
+    document.querySelector('#knowledgeManualInputs').innerHTML = renderKnowledgeItems(
+      manualInputs,
+      (item) => (item.source || '').replace('manual_input:', '') || '-',
+      (item) => item.trust_level || '-',
+      (item) => item.chunks || []
+    );
+    document.querySelector('#knowledgeMemoryFragments').innerHTML = renderKnowledgeItems(
+      memoryFragments,
+      (item) => item.session_id || '-',
+      () => '记忆',
+      (item) => [item.content || '']
+    );
+  } catch (error) {
+    const message = `<p class="message">${escapeHtml(briefError(error))}</p>`;
+    document.querySelector('#knowledgeDocuments').innerHTML = message;
+    document.querySelector('#knowledgeManualInputs').innerHTML = '';
+    document.querySelector('#knowledgeMemoryFragments').innerHTML = '';
+  }
+}
+
+function setKnowledgeLoading() {
+  document.querySelector('#knowledgeDocuments').innerHTML = '<p class="muted">加载中...</p>';
+  document.querySelector('#knowledgeManualInputs').innerHTML = '<p class="muted">加载中...</p>';
+  document.querySelector('#knowledgeMemoryFragments').innerHTML = '<p class="muted">加载中...</p>';
+}
+
+function renderKnowledgeItems(items, titleOf, statusOf, chunksOf) {
+  if (!items.length) return '<p class="muted">暂无内容</p>';
+  return items.map((item) => {
+    const title = titleOf(item);
+    const status = statusOf(item);
+    const chunks = chunksOf(item);
+    const fullContent = chunks.join('\n\n');
+    const preview = briefText(fullContent, 50);
+    return `
+      <details class="knowledge-item">
+        <summary>
+          <span title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+          <span>${escapeHtml(status)}</span>
+          <span>${escapeHtml(preview || '-')}</span>
+        </summary>
+        <pre>${escapeHtml(fullContent || '暂无内容')}</pre>
+      </details>
+    `;
+  }).join('');
+}
+
+function openDangerDialog(target) {
+  pendingDangerTarget = target || '';
+  document.querySelector('#adminSecretInput').value = '';
+  document.querySelector('#dangerDialog').classList.remove('hidden');
+  document.querySelector('#adminSecretInput').focus();
+}
+
+function closeDangerDialog() {
+  pendingDangerTarget = '';
+  document.querySelector('#dangerDialog').classList.add('hidden');
+}
+
+async function confirmDangerOperation() {
+  const secret = document.querySelector('#adminSecretInput').value;
+  const message = document.querySelector('#dangerMessage');
+  if (!pendingDangerTarget || !secret) return;
+  try {
+    const result = await API.adminDeleteMemory(pendingDangerTarget, secret);
+    closeDangerDialog();
+    message.textContent = result.deleted || '操作完成';
+    message.classList.add('success');
+    await loadKnowledgeBase();
+    await loadStats();
+    await loadDocuments();
+    await loadPending();
+  } catch (error) {
+    message.textContent = error.message && error.message.includes('密码')
+      ? '密码错误'
+      : briefError(error);
+    message.classList.remove('success');
+  }
+}
+
 function shortId(value) {
   return value.length > 12 ? `${value.slice(0, 8)}...` : value;
+}
+
+function briefText(value, length) {
+  const text = String(value || '').replaceAll('\n', ' ').trim();
+  return text.length > length ? `${text.slice(0, length)}...` : text;
 }
 
 function rowMessage(text, colspan) {
