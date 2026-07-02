@@ -74,52 +74,7 @@
           </div>
         </div>
       </section>
-
-      <section class="panel">
-        <div class="section-title">
-          <h2>知识库内容</h2>
-          <button id="refreshKnowledge" class="secondary">刷新</button>
-        </div>
-
-        <div class="knowledge-section">
-          <h3>已确权文档（<span id="documentsCount">0</span>条）</h3>
-          <div id="knowledgeDocuments" class="knowledge-list"></div>
-        </div>
-
-        <div class="knowledge-section">
-          <h3>手动录入知识（<span id="manualInputsCount">0</span>条）</h3>
-          <div id="knowledgeManualInputs" class="knowledge-list"></div>
-        </div>
-
-        <div class="knowledge-section">
-          <h3>记忆片段（<span id="memoryFragmentsCount">0</span>条）</h3>
-          <div id="knowledgeMemoryFragments" class="knowledge-list"></div>
-        </div>
-
-        <div class="danger-zone">
-          <div class="section-title">
-            <h2>危险操作区</h2>
-          </div>
-          <div class="actions">
-            <button class="danger" data-danger-target="all_memory">清空所有对话记忆</button>
-            <button class="danger" data-danger-target="all_documents">清空所有文档知识库</button>
-          </div>
-          <p id="dangerMessage" class="message" aria-live="polite"></p>
-        </div>
-      </section>
     </main>
-
-    <div id="dangerDialog" class="modal hidden" role="dialog" aria-modal="true">
-      <div class="modal-panel">
-        <h2>管理员确认</h2>
-        <p class="muted">此操作不可撤销，请输入管理员密码确认</p>
-        <input id="adminSecretInput" type="password" placeholder="管理员密码" />
-        <div class="actions">
-          <button id="confirmDangerButton" class="danger">确认执行</button>
-          <button id="cancelDangerButton" class="secondary">取消</button>
-        </div>
-      </div>
-    </div>
 
     <script src="./js/api.js"></script>
     <script src="./js/reviewer.js"></script>
