@@ -1,17 +1,16 @@
 :root {
   color-scheme: light;
-  --bg: #f6f7fb;
+  --bg: #f5f5f5;
   --panel: #ffffff;
-  --text: #1f2430;
-  --muted: #687083;
-  --line: #d9deea;
-  --primary: #5065a8;
-  --primary-strong: #40538f;
-  --danger: #c92626;
+  --text: #1a1a1a;
+  --muted: #666666;
+  --line: #e0e0e0;
+  --primary: #1a73e8;
+  --primary-strong: #1557b0;
+  --danger: #d32f2f;
   --danger-bg: #fff1f1;
   --success: #237a45;
   --success-bg: #edf8f1;
-  --shadow: 0 14px 36px rgba(31, 36, 48, 0.08);
 }
 
 * {
@@ -73,7 +72,7 @@ button.secondary {
 }
 
 button.secondary:hover {
-  background: #f0f3fb;
+  background: #f5f5f5;
 }
 
 button.danger {
@@ -81,7 +80,7 @@ button.danger {
 }
 
 button.danger:hover {
-  background: #a91f1f;
+  background: #b71c1c;
 }
 
 input,
@@ -101,7 +100,7 @@ textarea {
 
 input:focus,
 textarea:focus {
-  outline: 2px solid rgba(80, 101, 168, 0.22);
+  outline: 2px solid rgba(26, 115, 232, 0.16);
   border-color: var(--primary);
 }
 
@@ -122,10 +121,12 @@ th {
   color: var(--muted);
   font-size: 13px;
   font-weight: 650;
+  background: #f5f5f5;
 }
 
 td {
   font-size: 14px;
+  background: #fff;
 }
 
 .center-shell {
@@ -140,7 +141,6 @@ td {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: var(--shadow);
 }
 
 .panel.narrow {
