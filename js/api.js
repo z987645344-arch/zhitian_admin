@@ -14,11 +14,11 @@ const API = (() => {
   }
 
   async function request(path, options = {}) {
-    const { skipAuthRedirect = false, ...fetchOptions } = options;
+    const { skipAuthRedirect = false, json = options.body !== undefined, ...fetchOptions } = options;
     const response = await fetch(`${backendUrl}${path}`, {
       ...fetchOptions,
       headers: {
-        ...headers(fetchOptions.body !== undefined),
+        ...headers(json),
         ...(fetchOptions.headers || {}),
       },
     });
@@ -72,11 +72,15 @@ const API = (() => {
         body: JSON.stringify({ username, password }),
         skipAuthRedirect: true,
       }),
-    uploadDocument: (filePath) =>
-      request('/documents/upload', {
+    uploadDocument: (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return request('/documents/upload', {
         method: 'POST',
-        body: JSON.stringify({ file_path: filePath }),
-      }),
+        body: formData,
+        json: false,
+      });
+    },
     inputKnowledge: (title, content) =>
       request('/knowledge/input', {
         method: 'POST',

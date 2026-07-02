@@ -16,12 +16,12 @@ function initEmployeePage() {
 
 async function uploadDocument(event) {
   event.preventDefault();
-  const input = document.querySelector('#filePath');
+  const input = document.querySelector('#documentFile');
   const message = document.querySelector('#uploadMessage');
   const resultBox = document.querySelector('#uploadResult');
   const uploadButton = document.querySelector('#uploadButton');
-  const filePath = input.value.trim();
-  if (!filePath) return;
+  const file = input.files && input.files[0];
+  if (!file) return;
 
   uploadButton.disabled = true;
   message.textContent = '';
@@ -29,12 +29,13 @@ async function uploadDocument(event) {
   resultBox.classList.add('hidden');
 
   try {
-    const result = await API.uploadDocument(filePath);
+    const result = await API.uploadDocument(file);
     message.textContent = '文档已提交，等待审核员审核后生效';
     message.classList.add('success');
     resultBox.innerHTML = `
       <div>doc_id：<strong>${escapeHtml(result.doc_id || '-')}</strong></div>
       <div>trust_level：<span class="badge">${escapeHtml(result.trust_level || '-')}</span></div>
+      <div>source：${escapeHtml(result.source || '-')}</div>
       <div>chunks：${Number(result.chunks || 0)}</div>
     `;
     resultBox.classList.remove('hidden');
