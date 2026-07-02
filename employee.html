@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>员工页 - 知天管理后台</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>员工工作台</h1>
+        <p id="currentUser" class="muted"></p>
+      </div>
+      <button id="logoutButton" class="secondary">退出</button>
+    </header>
+
+    <main class="page-grid">
+      <section class="panel">
+        <div class="section-title">
+          <h2>上传文档</h2>
+        </div>
+        <form id="uploadForm" class="inline-form">
+          <input id="filePath" placeholder="服务器文件路径，例如 D:\files\manual.pdf" required />
+          <button id="uploadButton" type="submit">上传</button>
+        </form>
+        <p id="uploadMessage" class="message" aria-live="polite"></p>
+        <div id="uploadResult" class="result-box hidden"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>直接录入文字</h2>
+        </div>
+        <form id="knowledgeForm" class="form-stack">
+          <label>
+            知识标题
+            <input id="knowledgeTitle" placeholder="可选，例如：售后流程说明" />
+          </label>
+          <label>
+            文字内容
+            <textarea id="knowledgeContent" placeholder="输入需要进入知识库的文字内容" required></textarea>
+          </label>
+          <button id="knowledgeButton" type="submit">提交录入</button>
+        </form>
+        <p id="knowledgeMessage" class="message" aria-live="polite"></p>
+        <div id="knowledgeResult" class="result-box hidden"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>已上传文档</h2>
+          <button id="refreshDocuments" class="secondary">刷新</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>文件名</th>
+                <th>chunk数量</th>
+                <th>上传时间</th>
+              </tr>
+            </thead>
+            <tbody id="documentsTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="./js/api.js"></script>
+    <script src="./js/employee.js"></script>
+  </body>
+</html>

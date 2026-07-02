@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>登录 - 知天管理后台</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <main class="center-shell">
+      <section class="panel narrow">
+        <div class="brand-mark">知</div>
+        <h1>登录知天管理后台</h1>
+        <form id="loginForm" class="form-stack">
+          <label>
+            用户名
+            <input id="username" name="username" autocomplete="username" required />
+          </label>
+          <label>
+            密码
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <p id="message" class="message" aria-live="polite"></p>
+          <button id="loginButton" type="submit">登录</button>
+        </form>
+      </section>
+    </main>
+    <script src="./js/api.js"></script>
+    <script src="./js/login.js"></script>
+  </body>
+</html>

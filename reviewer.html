@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>审核员页 - 知天管理后台</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>审核工作台</h1>
+        <p id="currentUser" class="muted"></p>
+      </div>
+      <button id="logoutButton" class="secondary">退出</button>
+    </header>
+
+    <main class="page-grid">
+      <section class="panel">
+        <div class="section-title">
+          <h2>待审核文档</h2>
+          <button id="refreshPending" class="secondary">刷新</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>doc_id</th>
+                <th>文件名</th>
+                <th>上传者</th>
+                <th>上传时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="pendingTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>已确权文档总览</h2>
+          <button id="refreshDocuments" class="secondary">刷新</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>文件名</th>
+                <th>chunk数量</th>
+                <th>上传时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="documentsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>记忆总览</h2>
+          <button id="refreshStats" class="secondary">刷新</button>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span>当前向量库文档数量</span>
+            <strong id="vectorCount">-</strong>
+          </div>
+          <div class="stat-card">
+            <span>SQLite对话记录数量</span>
+            <strong id="sqliteCount">-</strong>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./js/api.js"></script>
+    <script src="./js/reviewer.js"></script>
+  </body>
+</html>
