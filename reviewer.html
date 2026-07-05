@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
@@ -59,6 +59,34 @@
         </div>
         <div id="documentPreviewPanel" class="preview-panel hidden"></div>
       </section>
+      <section class="panel">
+        <div class="section-title">
+          <h2>检索调试</h2>
+          <span class="muted">默认只查已审核企业文档，可选包含待审核文档，不访问用户记忆</span>
+        </div>
+        <div class="debug-form">
+          <input id="debugQuery" type="text" placeholder="输入要测试的query" />
+          <input id="debugTopK" type="number" min="1" max="20" value="5" />
+          <label class="debug-checkbox"><input id="debugIncludePending" type="checkbox" /> 包含待审核文档</label>
+          <button id="runDebugRetrieve">查询</button>
+        </div>
+        <p id="debugThreshold" class="muted"></p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>source</th>
+                <th>doc_id</th>
+                <th>状态</th>
+                <th>chunk_index</th>
+                <th>score</th>
+              </tr>
+            </thead>
+            <tbody id="debugRetrieveTable"></tbody>
+          </table>
+        </div>
+      </section>
+
 
       <section class="panel">
         <div class="section-title">
@@ -82,3 +110,10 @@
     <script src="./js/reviewer.js"></script>
   </body>
 </html>
+
+
+
+
+
+
+

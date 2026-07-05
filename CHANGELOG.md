@@ -15,3 +15,9 @@
 - 2026-07-03：审核员页文档管理列表新增预览按钮，可查看已上传文档在Chroma中的chunk内容。
 - 2026-07-03：审核员页文档管理改为调用GET /documents/verified，仅展示已审核通过文档，列表列调整为文件名、chunk数量、上传者、审核时间和操作。
 - 2026-07-03：员工页上传文档从填写服务器文件路径改为浏览器选择本地文件上传，适配公网/局域网部署。
+- 2026-07-05：审核员页新增“检索调试”区域，可输入query和top_k调用POST /debug/retrieve，展示verified企业文档候选source/doc_id/chunk_index/score。
+- 2026-07-05：检索调试结果按score降序展示，并按RAG_SCORE_THRESHOLD区分达标/未达标候选；该入口仅reviewer页面可见，不提供用户个人记忆查看能力。
+
+## 2026-07-05
+- 审核员页“检索调试”新增“包含待审核文档”开关，默认关闭；开启后可查看pending企业文档候选，结果表格新增状态列展示verified/pending。
+- 检索调试表格继续按score降序展示，并保留RAG_SCORE_THRESHOLD达标/未达标区分；rejected文档不会展示，且该入口不涉及用户个人记忆。

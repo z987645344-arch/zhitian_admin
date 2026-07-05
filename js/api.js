@@ -1,4 +1,4 @@
-const API = (() => {
+﻿const API = (() => {
   const backendUrl = 'http://localhost:8000';
 
   function token() {
@@ -93,6 +93,14 @@ const API = (() => {
     rejectDocument: (docId) => request(`/reject/${encodeURIComponent(docId)}`, { method: 'POST' }),
     previewDocument: (docId) => request(`/documents/${encodeURIComponent(docId)}/preview`, { method: 'GET' }),
     deleteDocument: (source) => request(`/documents/${encodeURIComponent(source)}`, { method: 'DELETE' }),
+    debugRetrieve: (query, topK = 5, includePending = false) =>
+      request('/debug/retrieve', {
+        method: 'POST',
+        body: JSON.stringify({ query, top_k: topK, include_pending: includePending }),
+      }),
     health: () => request('/health', { method: 'GET' }),
   };
 })();
+
+
+

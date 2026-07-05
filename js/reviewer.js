@@ -1,4 +1,4 @@
-if (API.ensureRole(['reviewer'])) {
+﻿if (API.ensureRole(['reviewer'])) {
   initReviewerPage();
 }
 
@@ -11,6 +11,10 @@ function initReviewerPage() {
   document.querySelector('#refreshPending').addEventListener('click', loadPending);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
+  document.querySelector('#runDebugRetrieve').addEventListener('click', runDebugRetrieve);
+  document.querySelector('#debugQuery').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') runDebugRetrieve();
+  });
   loadPending();
   loadDocuments();
   loadStats();
@@ -166,6 +170,51 @@ async function deleteDocument(source) {
   }
 }
 
+
+async function runDebugRetrieve() {
+  const table = document.querySelector('#debugRetrieveTable');
+  const thresholdText = document.querySelector('#debugThreshold');
+  const query = document.querySelector('#debugQuery').value.trim();
+  const topK = Number(document.querySelector('#debugTopK').value || 5);
+  const includePending = document.querySelector('#debugIncludePending').checked;
+  if (!query) {
+    table.innerHTML = rowMessage('请输入query', 5);
+    thresholdText.textContent = '';
+    return;
+  }
+
+  table.innerHTML = rowMessage('检索中...', 5);
+  thresholdText.textContent = '';
+  try {
+    const data = await API.debugRetrieve(query, topK, includePending);
+    const threshold = Number(data.threshold || 0);
+    const results = Array.isArray(data.results) ? data.results : [];
+    thresholdText.textContent = `当前采信阈值：score >= ${threshold.toFixed(3)}；本表展示完整候选，不做阈值过滤。`;
+    if (!results.length) {
+      table.innerHTML = rowMessage('暂无候选结果', 5);
+      return;
+    }
+
+    const sorted = [...results].sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+    table.innerHTML = sorted
+      .map((item) => {
+        const score = Number(item.score || 0);
+        const trusted = score >= threshold;
+        return `
+          <tr class="${trusted ? 'debug-trusted' : 'debug-low'}">
+            <td title="${escapeHtml(item.source || '')}">${escapeHtml(API.filename(item.source || ''))}</td>
+            <td title="${escapeHtml(item.doc_id || '')}">${escapeHtml(shortId(item.doc_id || ''))}</td>
+            <td>${statusBadge(item.status || '')}</td>
+            <td>${Number(item.chunk_index || 0)}</td>
+            <td><span class="score-badge ${trusted ? 'score-ok' : 'score-low'}">${score.toFixed(6)}</span></td>
+          </tr>
+        `;
+      })
+      .join('');
+  } catch (error) {
+    table.innerHTML = rowMessage(briefError(error), 5);
+  }
+}
 async function loadStats() {
   try {
     const data = await API.health();
@@ -176,6 +225,13 @@ async function loadStats() {
     document.querySelector('#vectorCount').textContent = '-';
     document.querySelector('#sqliteCount').textContent = '-';
   }
+}
+
+
+function statusBadge(status) {
+  const safeStatus = status === 'pending' ? 'pending' : 'verified';
+  const label = safeStatus === 'pending' ? 'pending' : 'verified';
+  return `<span class="status-badge status-${safeStatus}">${label}</span>`;
 }
 
 function shortId(value) {
@@ -199,3 +255,4 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
+
