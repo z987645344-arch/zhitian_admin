@@ -11,6 +11,12 @@ function initReviewerPage() {
   document.querySelector('#refreshPending').addEventListener('click', loadPending);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
+  document.querySelector('#developerViewButton').addEventListener('click', toggleDeveloperView);
+  document.querySelector('#refreshMetrics').addEventListener('click', loadMetrics);
+  document.querySelector('#traceIdSearch').addEventListener('click', renderTraceDetail);
+  document.querySelector('#traceIdQuery').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') renderTraceDetail();
+  });
   document.querySelector('#runDebugRetrieve').addEventListener('click', runDebugRetrieve);
   document.querySelector('#debugQuery').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') runDebugRetrieve();
@@ -18,6 +24,134 @@ function initReviewerPage() {
   loadPending();
   loadDocuments();
   loadStats();
+}
+
+async function toggleDeveloperView() {
+  const panel = document.querySelector('#developerMetricsPanel');
+  const button = document.querySelector('#developerViewButton');
+  const visible = !panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', visible);
+  document.querySelectorAll('.reviewer-work-panel').forEach((workPanel) => {
+    workPanel.classList.toggle('hidden', !visible);
+  });
+  button.textContent = visible ? '开发者视图' : '返回审核';
+  if (!visible) await loadMetrics();
+}
+
+async function loadMetrics() {
+  const grid = document.querySelector('#metricsGrid');
+  const timestamp = document.querySelector('#metricsTimestamp');
+  grid.innerHTML = '<p class="muted">加载中...</p>';
+  try {
+    const data = await API.reviewerMetrics();
+    const requests = data.requests || {};
+    const modelCalls = data.model_calls || {};
+    const errors = data.provider_errors || {};
+    window.latestReviewerMetrics = data;
+    timestamp.textContent = `数据截至 ${formatTimestamp(data.stats_since)}`;
+    const cards = [
+      ['请求总数', requests.total],
+      ['成功', requests.success],
+      ['降级', requests.degraded],
+      ['错误', requests.error],
+      ['快速调用', `${modelCalls.fast?.calls || 0} / ${modelCalls.fast?.average_elapsed_ms || 0}ms`],
+      ['专家调用', `${modelCalls.expert?.calls || 0} / ${modelCalls.expert?.average_elapsed_ms || 0}ms`],
+      ['搜索降级', data.search_fallback_count],
+      ['GLM 错误', errorSummary(errors.glm)],
+      ['DeepSeek 错误', errorSummary(errors.deepseek)],
+    ];
+    grid.innerHTML = cards.map(([label, value]) => `
+      <div class="stat-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? 0)}</strong></div>
+    `).join('');
+    renderStageTimingTable(data.recent_requests || []);
+    renderRequestTrend(data.recent_requests || []);
+    renderTraceDetail();
+  } catch (error) {
+    timestamp.textContent = '数据截至 -';
+    grid.innerHTML = `<p class="message">${escapeHtml(briefError(error))}</p>`;
+  }
+}
+
+function renderStageTimingTable(records) {
+  const table = document.querySelector('#stageTimingTable');
+  const stages = {};
+  records.forEach((record) => {
+    Object.entries(record.stage_timings || {}).forEach(([stage, elapsed]) => {
+      const item = stages[stage] || { total: 0, count: 0 };
+      item.total += Number(elapsed || 0);
+      item.count += 1;
+      stages[stage] = item;
+    });
+  });
+  const rows = Object.entries(stages).sort((left, right) => right[1].total - left[1].total);
+  table.innerHTML = rows.length ? rows.map(([stage, item]) => `
+    <tr><td>${escapeHtml(stage)}</td><td>${Math.round(item.total / item.count)}ms</td><td>${item.count}</td></tr>
+  `).join('') : rowMessage('暂无请求阶段数据', 3);
+}
+
+function renderTraceDetail() {
+  const panel = document.querySelector('#traceDetail');
+  const traceId = document.querySelector('#traceIdQuery').value.trim();
+  if (!traceId) {
+    panel.classList.add('hidden');
+    return;
+  }
+  const records = window.latestReviewerMetrics?.recent_requests || [];
+  const record = records.find((item) => item.trace_id === traceId);
+  panel.classList.remove('hidden');
+  if (!record) {
+    panel.textContent = '未找到该 trace_id。';
+    return;
+  }
+  const timings = Object.entries(record.stage_timings || {})
+    .map(([stage, elapsed]) => `${escapeHtml(stage)}：${Number(elapsed || 0)}ms`)
+    .join('；') || '无阶段耗时';
+  panel.innerHTML = `
+    <p>模式：${escapeHtml(record.mode || '-')}；状态：${escapeHtml(record.status || '-')}；总耗时：${Number(record.total_elapsed_ms || 0)}ms</p>
+    <p>阶段：${timings}</p>
+    <p>错误类型：${escapeHtml(record.error_type || '-')}</p>
+  `;
+}
+
+function renderRequestTrend(records) {
+  const chart = document.querySelector('#requestTrendChart');
+  const table = document.querySelector('#requestTrendTable');
+  const recent = records.slice(-30);
+  table.innerHTML = recent.length ? recent.slice().reverse().map((record) => `
+    <tr><td>${escapeHtml(formatTimestamp(record.timestamp))}</td><td>${escapeHtml(record.mode || '-')}</td><td>${Number(record.total_elapsed_ms || 0)}ms</td><td>${escapeHtml(record.status || '-')}</td></tr>
+  `).join('') : rowMessage('暂无请求趋势数据', 4);
+  if (!recent.length) {
+    chart.innerHTML = '';
+    return;
+  }
+  const width = 720;
+  const height = 180;
+  const padding = 24;
+  const values = recent.map((record) => Number(record.total_elapsed_ms || 0));
+  const maximum = Math.max(...values, 1);
+  const points = values.map((value, index) => {
+    const x = padding + ((width - padding * 2) * index / Math.max(values.length - 1, 1));
+    const y = height - padding - ((height - padding * 2) * value / maximum);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  chart.innerHTML = `
+    <line class="trend-grid" x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" />
+    <line class="trend-grid" x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" />
+    <polyline class="trend-line" points="${points.join(' ')}" />
+    ${points.map((point) => `<circle class="trend-point" cx="${point.split(',')[0]}" cy="${point.split(',')[1]}" r="2" />`).join('')}
+    <text x="${padding}" y="16" fill="#666666" font-size="12">最大 ${maximum}ms</text>
+  `;
+}
+
+function errorSummary(errors) {
+  const values = errors || {};
+  return `超时 ${values.timeout || 0} / 限流 ${values.rate_limit || 0} / 其他 ${values.other || 0}`;
+}
+
+function formatTimestamp(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 }
 
 async function loadPending() {

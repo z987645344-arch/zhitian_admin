@@ -99,6 +99,7 @@
         body: JSON.stringify({ query, top_k: topK, include_pending: includePending }),
       }),
     health: () => request('/health', { method: 'GET' }),
+    reviewerMetrics: () => request('/reviewer/metrics', { method: 'GET' }),
   };
 })();
 

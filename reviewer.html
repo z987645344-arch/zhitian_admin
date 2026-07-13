@@ -12,11 +12,50 @@
         <h1>审核工作台</h1>
         <p id="currentUser" class="muted"></p>
       </div>
-      <button id="logoutButton" class="secondary">退出</button>
+      <div class="actions">
+        <button id="developerViewButton" class="secondary">开发者视图</button>
+        <button id="logoutButton" class="secondary">退出</button>
+      </div>
     </header>
 
     <main class="page-grid">
-      <section class="panel">
+      <section id="developerMetricsPanel" class="panel hidden">
+        <div class="section-title">
+          <h2>开发者视图</h2>
+          <button id="refreshMetrics" class="secondary">刷新</button>
+        </div>
+        <p id="metricsTimestamp" class="muted">数据截至 -</p>
+        <div id="metricsGrid" class="stats-grid metrics-grid"></div>
+        <section class="developer-section">
+          <h2>分阶段耗时分布</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>阶段</th><th>平均耗时</th><th>调用次数</th></tr></thead>
+              <tbody id="stageTimingTable"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="developer-section">
+          <h2>trace_id 明细</h2>
+          <div class="inline-form">
+            <input id="traceIdQuery" type="text" placeholder="输入 trace_id" />
+            <button id="traceIdSearch" class="secondary">查询</button>
+          </div>
+          <div id="traceDetail" class="result-box hidden"></div>
+        </section>
+        <section class="developer-section">
+          <h2>请求耗时趋势</h2>
+          <svg id="requestTrendChart" class="trend-chart" viewBox="0 0 720 180" role="img" aria-label="请求耗时趋势"></svg>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>时间</th><th>模式</th><th>总耗时</th><th>状态</th></tr></thead>
+              <tbody id="requestTrendTable"></tbody>
+            </table>
+          </div>
+        </section>
+        <p class="muted">进程内统计，服务重启后清零；不跨 worker 或实例聚合。</p>
+      </section>
+      <section id="pendingReviewPanel" class="panel reviewer-work-panel">
         <div class="section-title">
           <h2>待审核文档</h2>
           <button id="refreshPending" class="secondary">刷新</button>
@@ -38,7 +77,7 @@
         <div id="previewPanel" class="preview-panel hidden"></div>
       </section>
 
-      <section class="panel">
+      <section id="documentManagementPanel" class="panel reviewer-work-panel">
         <div class="section-title">
           <h2>文档管理</h2>
           <button id="refreshDocuments" class="secondary">刷新</button>
@@ -59,7 +98,7 @@
         </div>
         <div id="documentPreviewPanel" class="preview-panel hidden"></div>
       </section>
-      <section class="panel">
+      <section id="retrieveDebugPanel" class="panel reviewer-work-panel">
         <div class="section-title">
           <h2>检索调试</h2>
           <span class="muted">默认只查已审核企业文档，可选包含待审核文档，不访问用户记忆</span>
@@ -88,7 +127,7 @@
       </section>
 
 
-      <section class="panel">
+      <section id="memoryOverviewPanel" class="panel reviewer-work-panel">
         <div class="section-title">
           <h2>记忆总览</h2>
           <button id="refreshStats" class="secondary">刷新</button>
