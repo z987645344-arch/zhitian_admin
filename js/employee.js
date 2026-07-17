@@ -9,9 +9,19 @@ function initEmployeePage() {
     location.replace('./login.html');
   });
   document.querySelector('#uploadForm').addEventListener('submit', uploadDocument);
+  document.querySelector('#documentFile').addEventListener('change', showConversionHint);
   document.querySelector('#knowledgeForm').addEventListener('submit', inputKnowledge);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
   loadDocuments();
+}
+
+function showConversionHint(event) {
+  const file = event.target.files && event.target.files[0];
+  const message = document.querySelector('#uploadMessage');
+  const extension = file && file.name.includes('.') ? `.${file.name.split('.').pop().toLowerCase()}` : '';
+  const convertible = new Set(['.doc', '.xls', '.xlsx', '.ppt', '.pptx']);
+  message.textContent = convertible.has(extension) ? '该格式将自动转换后上传' : '';
+  message.classList.remove('success');
 }
 
 async function uploadDocument(event) {
@@ -24,7 +34,7 @@ async function uploadDocument(event) {
   if (!file) return;
 
   uploadButton.disabled = true;
-  message.textContent = '';
+  showConversionHint({ target: input });
   message.classList.remove('success');
   resultBox.classList.add('hidden');
 

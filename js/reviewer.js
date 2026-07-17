@@ -168,7 +168,10 @@ async function loadPending() {
       .map((item) => `
         <tr>
           <td title="${escapeHtml(item.doc_id || '')}">${escapeHtml(shortId(item.doc_id || ''))}</td>
-          <td title="${escapeHtml(item.source || '')}">${escapeHtml(API.filename(item.source || ''))}</td>
+          <td title="${escapeHtml(item.source || '')}">
+            ${escapeHtml(API.filename(item.source || ''))}
+            ${item.converted_from ? `<div class="muted">转换来源：${escapeHtml(item.converted_from)}</div>` : ''}
+          </td>
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
           <td>${escapeHtml(item.uploaded_at || '-')}</td>
           <td>
@@ -262,7 +265,10 @@ async function loadDocuments() {
     table.innerHTML = documents
       .map((item) => `
         <tr>
-          <td title="${escapeHtml(item.source || '')}">${escapeHtml(API.filename(item.source || ''))}</td>
+          <td title="${escapeHtml(item.source || '')}">
+            ${escapeHtml(API.filename(item.source || ''))}
+            ${item.converted_from ? `<div class="muted">转换来源：${escapeHtml(item.converted_from)}</div>` : ''}
+          </td>
           <td>${Number(item.chunk_count || 0)}</td>
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
           <td>${escapeHtml(item.reviewed_at || '-')}</td>
