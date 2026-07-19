@@ -100,6 +100,11 @@
       }),
     health: () => request('/health', { method: 'GET' }),
     reviewerMetrics: () => request('/reviewer/metrics', { method: 'GET' }),
+    systemModules: () => request('/reviewer/system-modules', { method: 'GET' }),
+    saveSystemModules: (modules) => request('/reviewer/system-modules', {
+      method: 'PUT',
+      body: JSON.stringify(modules),
+    }),
   };
 })();
 

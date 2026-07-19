@@ -13,6 +13,11 @@ function initReviewerPage() {
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
   document.querySelector('#developerViewButton').addEventListener('click', toggleDeveloperView);
   document.querySelector('#refreshMetrics').addEventListener('click', loadMetrics);
+  document.querySelector('#editSystemModules').addEventListener('click', beginSystemModulesEdit);
+  document.querySelector('#saveSystemModules').addEventListener('click', openSystemModulesConfirm);
+  document.querySelector('#cancelSystemModulesSave').addEventListener('click', closeSystemModulesConfirm);
+  document.querySelector('#discardSystemModules').addEventListener('click', discardSystemModulesEdit);
+  document.querySelector('#confirmSystemModulesSave').addEventListener('click', saveSystemModules);
   document.querySelector('#traceIdSearch').addEventListener('click', renderTraceDetail);
   document.querySelector('#traceIdQuery').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') renderTraceDetail();
@@ -36,6 +41,81 @@ async function toggleDeveloperView() {
   });
   button.textContent = visible ? '开发者视图' : '返回审核';
   if (!visible) await loadMetrics();
+  if (!visible) await loadSystemModules();
+}
+
+async function loadSystemModules() {
+  const status = document.querySelector('#systemModulesStatus');
+  try {
+    const modules = await API.systemModules();
+    document.querySelector('#guidanceModule').value = modules.guidance?.content || '';
+    document.querySelector('#toneModule').value = modules.tone?.content || '';
+    document.querySelector('#forbiddenModule').value = modules.forbidden?.content || '';
+    window.savedSystemModules = readSystemModuleValues();
+    setSystemModulesEditing(false);
+    status.textContent = '模块已加载';
+  } catch (error) {
+    status.textContent = briefError(error);
+  }
+}
+
+function readSystemModuleValues() {
+  return {
+    guidance: document.querySelector('#guidanceModule').value,
+    tone: document.querySelector('#toneModule').value,
+    forbidden: document.querySelector('#forbiddenModule').value,
+  };
+}
+
+function setSystemModulesEditing(editing) {
+  ['guidanceModule', 'toneModule', 'forbiddenModule'].forEach((id) => {
+    document.querySelector(`#${id}`).disabled = !editing;
+  });
+  document.querySelector('#editSystemModules').classList.toggle('hidden', editing);
+  document.querySelector('#saveSystemModules').classList.toggle('hidden', !editing);
+}
+
+function beginSystemModulesEdit() {
+  setSystemModulesEditing(true);
+  document.querySelector('#systemModulesStatus').textContent = '正在编辑，保存前不会生效';
+  document.querySelector('#guidanceModule').focus();
+}
+
+function openSystemModulesConfirm() {
+  document.querySelector('#systemModulesConfirm').showModal();
+}
+
+function closeSystemModulesConfirm() {
+  document.querySelector('#systemModulesConfirm').close();
+}
+
+function discardSystemModulesEdit() {
+  const saved = window.savedSystemModules || { guidance: '', tone: '', forbidden: '' };
+  Object.entries(saved).forEach(([name, value]) => {
+    document.querySelector(`#${name}Module`).value = value;
+  });
+  closeSystemModulesConfirm();
+  setSystemModulesEditing(false);
+  document.querySelector('#systemModulesStatus').textContent = '已放弃本次修改';
+}
+
+async function saveSystemModules() {
+  const button = document.querySelector('#confirmSystemModulesSave');
+  const status = document.querySelector('#systemModulesStatus');
+  button.disabled = true;
+  status.textContent = '保存中...';
+  try {
+    const values = readSystemModuleValues();
+    await API.saveSystemModules(values);
+    window.savedSystemModules = values;
+    closeSystemModulesConfirm();
+    setSystemModulesEditing(false);
+    status.textContent = '已保存，将从下一次请求开始生效';
+  } catch (error) {
+    status.textContent = briefError(error);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function loadMetrics() {
@@ -57,7 +137,6 @@ async function loadMetrics() {
       ['快速调用', `${modelCalls.fast?.calls || 0} / ${modelCalls.fast?.average_elapsed_ms || 0}ms`],
       ['专家调用', `${modelCalls.expert?.calls || 0} / ${modelCalls.expert?.average_elapsed_ms || 0}ms`],
       ['搜索降级', data.search_fallback_count],
-      ['GLM 错误', errorSummary(errors.glm)],
       ['DeepSeek 错误', errorSummary(errors.deepseek)],
     ];
     grid.innerHTML = cards.map(([label, value]) => `
@@ -318,12 +397,12 @@ async function runDebugRetrieve() {
   const topK = Number(document.querySelector('#debugTopK').value || 5);
   const includePending = document.querySelector('#debugIncludePending').checked;
   if (!query) {
-    table.innerHTML = rowMessage('请输入query', 5);
+    table.innerHTML = rowMessage('请输入query', 7);
     thresholdText.textContent = '';
     return;
   }
 
-  table.innerHTML = rowMessage('检索中...', 5);
+  table.innerHTML = rowMessage('检索中...', 7);
   thresholdText.textContent = '';
   try {
     const data = await API.debugRetrieve(query, topK, includePending);
@@ -331,14 +410,15 @@ async function runDebugRetrieve() {
     const results = Array.isArray(data.results) ? data.results : [];
     thresholdText.textContent = `当前采信阈值：score >= ${threshold.toFixed(3)}；本表展示完整候选，不做阈值过滤。`;
     if (!results.length) {
-      table.innerHTML = rowMessage('暂无候选结果', 5);
+      table.innerHTML = rowMessage('暂无候选结果', 7);
       return;
     }
 
-    const sorted = [...results].sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+    const sorted = [...results].sort((a, b) => Number(b.final_score || b.score || 0) - Number(a.final_score || a.score || 0));
     table.innerHTML = sorted
       .map((item) => {
-        const score = Number(item.score || 0);
+        const vectorScore = Number(item.vector_score || 0);
+        const score = Number(item.final_score || item.score || 0);
         const trusted = score >= threshold;
         return `
           <tr class="${trusted ? 'debug-trusted' : 'debug-low'}">
@@ -346,13 +426,15 @@ async function runDebugRetrieve() {
             <td title="${escapeHtml(item.doc_id || '')}">${escapeHtml(shortId(item.doc_id || ''))}</td>
             <td>${statusBadge(item.status || '')}</td>
             <td>${Number(item.chunk_index || 0)}</td>
+            <td>${vectorScore.toFixed(6)}</td>
+            <td><span class="badge">${item.title_boosted ? '是' : '否'}</span></td>
             <td><span class="score-badge ${trusted ? 'score-ok' : 'score-low'}">${score.toFixed(6)}</span></td>
           </tr>
         `;
       })
       .join('');
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 5);
+    table.innerHTML = rowMessage(briefError(error), 7);
   }
 }
 async function loadStats() {

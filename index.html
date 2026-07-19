@@ -6,23 +6,23 @@
     <title>知天管理后台</title>
     <link rel="stylesheet" href="./css/style.css" />
   </head>
-  <body>
-    <main class="center-shell">
-      <section class="panel narrow">
+  <body class="auth-page">
+    <main class="auth-shell">
+      <section class="auth-card redirect-card">
+        <div class="brand-mark" aria-hidden="true">知</div>
+        <p class="eyebrow">ZHITIAN AGENT PLATFORM</p>
         <h1>知天管理后台</h1>
-        <p class="muted">正在检查登录状态...</p>
+        <p class="muted">正在确认身份与工作区权限</p>
+        <div class="loading-line" aria-hidden="true"><span></span></div>
       </section>
     </main>
     <script>
       const token = localStorage.getItem('auth_token');
       const role = localStorage.getItem('user_role');
-      if (!token) {
-        location.replace('./login.html');
-      } else if (role === 'employee') {
-        location.replace('./employee.html');
-      } else if (role === 'reviewer') {
-        location.replace('./reviewer.html');
-      } else {
+      if (!token) location.replace('./login.html');
+      else if (role === 'employee') location.replace('./employee.html');
+      else if (role === 'reviewer') location.replace('./reviewer.html');
+      else {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_role');
         localStorage.removeItem('username');

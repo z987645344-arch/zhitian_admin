@@ -3,73 +3,66 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>员工页 - 知天管理后台</title>
+    <title>员工工作台 · 知天管理后台</title>
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div>
-        <h1>员工工作台</h1>
-        <p id="currentUser" class="muted"></p>
-      </div>
-      <button id="logoutButton" class="secondary">退出</button>
-    </header>
+    <div class="app-layout">
+      <aside class="sidebar">
+        <a class="brand" href="./employee.html"><span class="brand-symbol">知</span><span><strong>知天后台</strong><small>Knowledge Ops</small></span></a>
+        <nav class="side-nav" aria-label="员工工作台导航">
+          <a class="active" href="#overview">工作台</a>
+          <a href="#upload-section">上传文档</a>
+          <a href="#entry-section">文字录入</a>
+          <a href="#documents-section">我的文档</a>
+        </nav>
+        <div class="sidebar-note"><span class="status-dot"></span><div><strong>审核流已启用</strong><small>提交内容经审核后生效</small></div></div>
+        <div class="account-card"><div class="account-avatar">员</div><div><strong id="currentUser"></strong><small>知识贡献者</small></div></div>
+        <button id="logoutButton" class="secondary sidebar-logout">退出登录</button>
+      </aside>
 
-    <main class="page-grid">
-      <section class="panel">
-        <div class="section-title">
-          <h2>上传文档</h2>
-        </div>
-        <form id="uploadForm" class="inline-form">
-          <input id="documentFile" type="file" accept=".txt,.md,.pdf,.docx,.doc,.xls,.xlsx,.ppt,.pptx" required />
-          <button id="uploadButton" type="submit">上传</button>
-        </form>
-        <p id="uploadMessage" class="message" aria-live="polite"></p>
-        <div id="uploadResult" class="result-box hidden"></div>
-      </section>
+      <main class="workspace">
+        <header id="overview" class="workspace-header">
+          <div><p class="eyebrow">EMPLOYEE WORKSPACE</p><h1>员工工作台</h1><p class="muted">提交、整理并跟踪企业知识资产</p></div>
+          <span class="context-badge">审核后进入知识库</span>
+        </header>
 
-      <section class="panel">
-        <div class="section-title">
-          <h2>直接录入文字</h2>
-        </div>
-        <form id="knowledgeForm" class="form-stack">
-          <label>
-            知识标题
-            <input id="knowledgeTitle" placeholder="可选，例如：售后流程说明" />
-          </label>
-          <label>
-            文字内容
-            <textarea id="knowledgeContent" placeholder="输入需要进入知识库的文字内容" required></textarea>
-          </label>
-          <button id="knowledgeButton" type="submit">提交录入</button>
-        </form>
-        <p id="knowledgeMessage" class="message" aria-live="polite"></p>
-        <div id="knowledgeResult" class="result-box hidden"></div>
-      </section>
+        <section class="workflow-strip" aria-label="知识入库流程">
+          <div><span>01</span><strong>提交资料</strong><small>文档上传或文字录入</small></div>
+          <i></i><div><span>02</span><strong>审核确权</strong><small>审核员预览并确认</small></div>
+          <i></i><div><span>03</span><strong>检索生效</strong><small>进入 verified 知识库</small></div>
+        </section>
 
-      <section class="panel">
-        <div class="section-title">
-          <h2>已上传文档</h2>
-          <button id="refreshDocuments" class="secondary">刷新</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>文件名</th>
-                <th>chunk数量</th>
-                <th>上传时间</th>
-                <th>审核状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="documentsTable"></tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+        <div class="content-grid two-column">
+          <section id="upload-section" class="panel feature-panel">
+            <div class="section-title"><div><p class="section-kicker">DOCUMENT</p><h2>上传文档</h2></div><span class="format-label">最大 20MB</span></div>
+            <p class="section-copy">支持常用文档与 Office 格式；旧版 Office 文件将自动转换后解析。</p>
+            <form id="uploadForm" class="upload-zone">
+              <input id="documentFile" type="file" accept=".txt,.md,.pdf,.docx,.doc,.xls,.xlsx,.ppt,.pptx" required />
+              <button id="uploadButton" type="submit">上传并提交审核</button>
+            </form>
+            <p id="uploadMessage" class="message" aria-live="polite"></p>
+            <div id="uploadResult" class="result-box hidden"></div>
+          </section>
 
-    <script src="./js/api.js"></script>
-    <script src="./js/employee.js"></script>
+          <section id="entry-section" class="panel feature-panel">
+            <div class="section-title"><div><p class="section-kicker">MANUAL ENTRY</p><h2>直接录入文字</h2></div><span class="format-label">结构化知识</span></div>
+            <form id="knowledgeForm" class="form-stack compact-form">
+              <label><span>知识标题</span><input id="knowledgeTitle" placeholder="例如：售后流程说明" /></label>
+              <label><span>文字内容</span><textarea id="knowledgeContent" placeholder="输入需要进入知识库的内容" required></textarea></label>
+              <button id="knowledgeButton" type="submit">提交录入</button>
+            </form>
+            <p id="knowledgeMessage" class="message" aria-live="polite"></p>
+            <div id="knowledgeResult" class="result-box hidden"></div>
+          </section>
+        </div>
+
+        <section id="documents-section" class="panel table-panel">
+          <div class="section-title"><div><p class="section-kicker">MY DOCUMENTS</p><h2>已上传文档</h2></div><button id="refreshDocuments" class="secondary">刷新列表</button></div>
+          <div class="table-wrap"><table><thead><tr><th>文件名</th><th>CHUNK</th><th>上传时间</th><th>审核状态</th><th>操作</th></tr></thead><tbody id="documentsTable"></tbody></table></div>
+        </section>
+      </main>
+    </div>
+    <script src="./js/api.js"></script><script src="./js/employee.js"></script>
   </body>
 </html>
