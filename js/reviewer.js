@@ -1,4 +1,4 @@
-﻿if (API.ensureRole(['reviewer'])) {
+if (API.ensureRole(['reviewer'])) {
   initReviewerPage();
 }
 
@@ -11,17 +11,8 @@ function initReviewerPage() {
   document.querySelector('#refreshPending').addEventListener('click', loadPending);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
-  document.querySelector('#developerViewButton').addEventListener('click', toggleDeveloperView);
-  document.querySelector('#refreshMetrics').addEventListener('click', loadMetrics);
-  document.querySelector('#editSystemModules').addEventListener('click', beginSystemModulesEdit);
-  document.querySelector('#saveSystemModules').addEventListener('click', openSystemModulesConfirm);
-  document.querySelector('#cancelSystemModulesSave').addEventListener('click', closeSystemModulesConfirm);
-  document.querySelector('#discardSystemModules').addEventListener('click', discardSystemModulesEdit);
-  document.querySelector('#confirmSystemModulesSave').addEventListener('click', saveSystemModules);
-  document.querySelector('#traceIdSearch').addEventListener('click', renderTraceDetail);
-  document.querySelector('#traceIdQuery').addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') renderTraceDetail();
-  });
+  document.querySelector('#refreshEmployeeRequests').addEventListener('click', loadEmployeeRequests);
+  document.querySelector('#refreshPasswordResets').addEventListener('click', loadPasswordResetEvents);
   document.querySelector('#runDebugRetrieve').addEventListener('click', runDebugRetrieve);
   document.querySelector('#debugQuery').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') runDebugRetrieve();
@@ -29,6 +20,53 @@ function initReviewerPage() {
   loadPending();
   loadDocuments();
   loadStats();
+  loadEmployeeRequests();
+  loadPasswordResetEvents();
+  loadEnterprisePassword();
+}
+
+async function loadEnterprisePassword() {
+  const value = document.querySelector('#enterprisePasswordValue');
+  const refresh = document.querySelector('#enterprisePasswordRefresh');
+  try {
+    const data = await API.reviewerEnterprisePassword();
+    value.textContent = data.password || '-';
+    refresh.textContent = `下次刷新：${formatTimestamp(data.next_refresh_at)}`;
+  } catch (error) {
+    value.textContent = '暂无法加载';
+    refresh.textContent = briefError(error);
+  }
+}
+
+async function loadPasswordResetEvents() {
+  const table = document.querySelector('#passwordResetTable');
+  table.innerHTML = rowMessage('加载中...', 2);
+  try {
+    const data = await API.reviewerPasswordResetEvents();
+    const events = Array.isArray(data.events) ? data.events : [];
+    table.innerHTML = events.length ? events.map((item) => `<tr><td>${escapeHtml(item.username || '-')}</td><td>${escapeHtml(formatTimestamp(item.created_at))}</td></tr>`).join('') : rowMessage('暂无密码重置记录', 2);
+  } catch (error) { table.innerHTML = rowMessage(briefError(error), 2); }
+}
+
+async function loadEmployeeRequests() {
+  const table = document.querySelector('#employeeRequestsTable');
+  const status = document.querySelector('#employeeRequestStatus');
+  table.innerHTML = rowMessage('加载中...', 3);
+  status.textContent = '';
+  try {
+    const data = await API.reviewerRegistrationRequests();
+    const requests = Array.isArray(data.requests) ? data.requests : [];
+    table.innerHTML = requests.length ? requests.map((item) => `
+      <tr><td>${escapeHtml(item.username || item.email || '-')}</td><td>${escapeHtml(formatTimestamp(item.created_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>
+    `).join('') : rowMessage('暂无待审批员工申请', 3);
+    table.querySelectorAll('button[data-action]').forEach((button) => button.addEventListener('click', async () => {
+      try {
+        await API.reviewEmployeeRegistration(button.dataset.id, button.dataset.action);
+        status.textContent = button.dataset.action === 'approve' ? '申请已批准' : '申请已拒绝';
+        await loadEmployeeRequests();
+      } catch (error) { status.textContent = briefError(error); }
+    }));
+  } catch (error) { table.innerHTML = rowMessage(briefError(error), 3); }
 }
 
 async function toggleDeveloperView() {
@@ -41,7 +79,6 @@ async function toggleDeveloperView() {
   });
   button.textContent = visible ? '开发者视图' : '返回审核';
   if (!visible) await loadMetrics();
-  if (!visible) await loadSystemModules();
 }
 
 async function loadSystemModules() {
@@ -112,6 +149,8 @@ async function saveSystemModules() {
     setSystemModulesEditing(false);
     status.textContent = '已保存，将从下一次请求开始生效';
   } catch (error) {
+    setSystemModulesEditing(false);
+    closeSystemModulesConfirm();
     status.textContent = briefError(error);
   } finally {
     button.disabled = false;

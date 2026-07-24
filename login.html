@@ -24,9 +24,18 @@
             <span>密码</span>
             <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required />
           </label>
+          <label>
+            <span>账号类型</span>
+            <select id="role" name="role" required>
+              <option value="employee">员工</option>
+              <option value="reviewer">审核员</option>
+              <option value="developer">开发者</option>
+            </select>
+          </label>
           <p id="message" class="message" aria-live="polite"></p>
           <button id="loginButton" type="submit" class="btn-block">登录工作台</button>
         </form>
+        <p class="auth-link"><a href="./request-access.html">申请企业角色账号</a><span aria-hidden="true"> · </span><a href="./forgot-password.html">忘记密码</a></p>
         <div class="role-note"><span>员工 · 知识提交</span><span>审核员 · 知识治理</span></div>
         <p class="auth-footer">知天 Agent Platform · v1.9</p>
       </section>

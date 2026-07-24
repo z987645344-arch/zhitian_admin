@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>申请企业账号 · 知天</title><link rel="stylesheet" href="./css/style.css" /></head>
+  <body class="auth-page">
+    <main class="auth-shell"><section class="auth-card">
+      <div class="brand-mark" aria-hidden="true">知</div>
+      <div class="auth-heading"><p class="eyebrow">ENTERPRISE ACCESS</p><h1>申请企业角色</h1><p class="muted">提交后由对应权限人员审批，不会自动登录。</p></div>
+      <form id="requestAccessForm" class="form-stack">
+        <label><span>邮箱</span><input id="email" type="email" autocomplete="email" required /></label>
+        <label><span>密码</span><input id="password" type="password" autocomplete="new-password" required /></label>
+        <label><span>确认密码</span><input id="confirmPassword" type="password" autocomplete="new-password" required /></label>
+        <label><span>申请角色</span><select id="requestedRole"><option value="employee">员工</option><option value="reviewer">审核员</option><option value="developer">开发者</option></select></label>
+        <label><span>邮箱验证码</span><div class="inline-actions"><input id="verificationCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required /><button id="sendCodeButton" type="button">发送验证码</button></div></label>
+        <label><span>企业密码</span><input id="enterprisePassword" type="password" required /></label>
+        <p id="message" class="message" aria-live="polite"></p>
+        <button id="submitButton" type="submit" class="btn-block">提交申请</button>
+      </form>
+      <p class="auth-link"><a href="./login.html">返回登录</a></p>
+    </section></main>
+    <script src="./js/api.js"></script><script src="./js/request-access.js"></script>
+  </body>
+</html>

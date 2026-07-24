@@ -66,12 +66,37 @@
     logout,
     ensureRole,
     filename,
-    login: (username, password) =>
+    login: (username, password, role) =>
       request('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, role }),
         skipAuthRedirect: true,
       }),
+    requestRegistration: (payload) => request('/auth/register/request', {
+      method: 'POST', body: JSON.stringify(payload), skipAuthRedirect: true,
+    }),
+    sendVerificationCode: (email, purpose) => request('/auth/send-verification-code', {
+      method: 'POST', body: JSON.stringify({ email, purpose }), skipAuthRedirect: true,
+    }),
+    reviewerRegistrationRequests: () => request('/reviewer/registration-requests', { method: 'GET' }),
+    reviewEmployeeRegistration: (id, action) => request(`/reviewer/registration-requests/${id}/${action}`, { method: 'POST' }),
+    developerRegistrationRequests: () => request('/developer/registration-requests', { method: 'GET' }),
+    reviewDeveloperRegistration: (id, action) => request(`/developer/registration-requests/${id}/${action}`, { method: 'POST' }),
+    developerUsers: () => request('/developer/users', { method: 'GET' }),
+    developerEnterprisePassword: () => request('/developer/enterprise-password', { method: 'GET' }),
+    developerHeadcountStats: () => request('/developer/headcount-stats', { method: 'GET' }),
+    developerPersonnelDetail: () => request('/developer/personnel-detail', { method: 'GET' }),
+    setPersonnelFlag: (id, flagged) => request(`/developer/users/${encodeURIComponent(id)}/flag`, { method: 'PATCH', body: JSON.stringify({ flagged }) }),
+    savePersonnelNotes: (id, notes) => request(`/developer/users/${encodeURIComponent(id)}/notes`, { method: 'PATCH', body: JSON.stringify({ notes }) }),
+    developerPasswordResetEvents: () => request('/developer/password-reset-events', { method: 'GET' }),
+    reviewerPasswordResetEvents: () => request('/reviewer/password-reset-events', { method: 'GET' }),
+    reviewerEnterprisePassword: () => request('/reviewer/enterprise-password', { method: 'GET' }),
+    forgotPassword: (username, enterprisePassword, verificationCode) => request('/auth/forgot-password', {
+      method: 'POST', body: JSON.stringify({ username, enterprise_password: enterprisePassword, verification_code: verificationCode }), skipAuthRedirect: true,
+    }),
+    setUserActive: (id, active) => request(`/developer/users/${encodeURIComponent(id)}/${active ? 'enable' : 'disable'}`, { method: 'POST' }),
+    changeUserRole: (id, targetRole) => request(`/developer/users/${encodeURIComponent(id)}/change_role`, { method: 'POST', body: JSON.stringify({ target_role: targetRole }) }),
+    resetUserPassword: (id) => request(`/developer/users/${encodeURIComponent(id)}/reset_password`, { method: 'POST' }),
     uploadDocument: (file) => {
       const formData = new FormData();
       formData.append('file', file);
@@ -100,8 +125,8 @@
       }),
     health: () => request('/health', { method: 'GET' }),
     reviewerMetrics: () => request('/reviewer/metrics', { method: 'GET' }),
-    systemModules: () => request('/reviewer/system-modules', { method: 'GET' }),
-    saveSystemModules: (modules) => request('/reviewer/system-modules', {
+    systemModules: () => request('/developer/system-modules', { method: 'GET' }),
+    saveSystemModules: (modules) => request('/developer/system-modules', {
       method: 'PUT',
       body: JSON.stringify(modules),
     }),

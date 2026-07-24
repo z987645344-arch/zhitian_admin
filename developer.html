@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>开发者控制台 · 知天管理后台</title><link rel="stylesheet" href="./css/style.css" /></head>
+  <body>
+    <div class="app-layout">
+      <aside class="sidebar">
+        <a class="brand" href="./developer.html"><span class="brand-symbol">知</span><span><strong>知天后台</strong><small>Developer Console</small></span></a>
+        <nav class="side-nav"><a class="active" href="#accessPanel">注册审批</a><a href="#usersPanel">人员概览</a><a href="#passwordResetPanel">密码重置记录</a><a href="#modulesPanel">系统模块</a><a href="#metricsPanel">可观测性</a></nav>
+        <div class="sidebar-note"><span class="status-dot"></span><div><strong>开发者控制台在线</strong><small>权限与运行状态集中管理</small></div></div>
+        <div class="account-card"><div class="account-avatar">开</div><div><strong id="currentUser"></strong><small>开发者</small></div></div>
+        <button id="logoutButton" class="secondary sidebar-logout">退出登录</button>
+      </aside>
+      <main class="workspace">
+        <header class="workspace-header"><div><p class="eyebrow">DEVELOPER CONSOLE</p><h1>开发者控制台</h1><p class="muted">审批企业权限、治理账号、维护系统规则并观察运行状态</p></div><span class="context-badge">Developer only</span></header>
+
+        <section id="accessPanel" class="panel table-panel"><div class="section-title"><div><p class="section-kicker">ACCESS REVIEW</p><h2>注册审批</h2><p class="muted">开发者与审核员申请分区处理。</p></div><button id="refreshRequests" class="secondary">刷新申请</button></div><p id="requestStatus" class="message"></p><div class="request-tables"><section><h3>开发者申请</h3><div class="table-wrap"><table><thead><tr><th>邮箱</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="developerRequestsTable"></tbody></table></div></section><section><h3>审核员申请</h3><div class="table-wrap"><table><thead><tr><th>邮箱</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="reviewerRequestsTable"></tbody></table></div></section></div></section>
+
+        <section id="usersPanel" class="panel table-panel"><div class="section-title"><div><p class="section-kicker">PERSONNEL OVERVIEW</p><h2>人员概览</h2><p id="headcountDate" class="muted">统计日期 -</p></div><button id="refreshUsers" class="secondary">刷新人员</button></div><div class="enterprise-password-card stat-card"><span>当前企业密码</span><strong id="enterprisePasswordValue">加载中...</strong><small id="enterprisePasswordRefresh">下次刷新：-</small></div><div id="headcountGrid" class="stats-grid headcount-grid"></div><p id="usersStatus" class="message"></p><section class="developer-section"><h3>开发者与审核员详情</h3><div class="table-wrap"><table><thead><tr><th>邮箱/用户名</th><th>角色</th><th>状态</th><th>默认账号</th><th>上次登录</th><th>关注</th><th>备注</th></tr></thead><tbody id="personnelTable"></tbody></table></div></section></section>
+
+        <section id="passwordResetPanel" class="panel table-panel"><div class="section-title"><div><p class="section-kicker">PASSWORD AUDIT</p><h2>最近密码重置</h2><p class="muted">仅展示最近20条事件，不包含任何密码内容。</p></div><button id="refreshPasswordResets" class="secondary">刷新记录</button></div><div class="table-wrap"><table><thead><tr><th>邮箱/用户名</th><th>重置时间</th></tr></thead><tbody id="passwordResetTable"></tbody></table></div></section>
+
+        <section id="modulesPanel" class="panel"><div class="section-title"><div><p class="section-kicker">SYSTEM PROMPT</p><h2>系统提示词模块</h2></div><div class="module-actions"><button id="editSystemModules" class="secondary">修改模块</button><button id="saveSystemModules" class="hidden">保存模块</button></div></div><div class="module-editor-grid"><label>规范模块<textarea id="guidanceModule" rows="6" disabled></textarea></label><label>语气风格模块<textarea id="toneModule" rows="6" disabled></textarea></label><label>禁用模块<textarea id="forbiddenModule" rows="6" disabled></textarea></label></div><p id="systemModulesStatus" class="muted"></p></section>
+
+        <section id="metricsPanel" class="panel"><div class="section-title"><div><p class="section-kicker">OBSERVABILITY</p><h2>可观测性</h2></div><button id="refreshMetrics" class="secondary">刷新指标</button></div><p id="metricsTimestamp" class="muted">数据截至 -</p><div id="metricsGrid" class="stats-grid metrics-grid"></div><section class="developer-section"><h3>分阶段耗时分布</h3><div class="table-wrap"><table><thead><tr><th>阶段</th><th>平均耗时</th><th>调用次数</th></tr></thead><tbody id="stageTimingTable"></tbody></table></div></section><section class="developer-section"><h3>trace_id 明细</h3><div class="inline-form"><input id="traceIdQuery" type="text" placeholder="输入 trace_id" /><button id="traceIdSearch" class="secondary">查询</button></div><div id="traceDetail" class="result-box hidden"></div></section><section class="developer-section"><h3>请求耗时趋势</h3><svg id="requestTrendChart" class="trend-chart" viewBox="0 0 720 180" role="img" aria-label="请求耗时趋势"></svg><div class="table-wrap"><table><thead><tr><th>时间</th><th>模式</th><th>总耗时</th><th>状态</th></tr></thead><tbody id="requestTrendTable"></tbody></table></div></section><p class="system-note">进程内统计，服务重启后清零；不跨worker或实例聚合。</p></section>
+      </main>
+    </div>
+    <dialog id="systemModulesConfirm" class="confirm-dialog"><h3>确认保存系统提示词模块？</h3><p class="muted">确定后，新内容将从下一次模型请求开始生效。</p><div class="dialog-actions"><button id="cancelSystemModulesSave" class="secondary">取消</button><button id="discardSystemModules" class="danger">放弃</button><button id="confirmSystemModulesSave">确定</button></div></dialog>
+    <script src="./js/api.js"></script><script src="./js/developer.js"></script>
+  </body>
+</html>

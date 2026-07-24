@@ -9,8 +9,7 @@
       <aside class="sidebar">
         <a class="brand" href="./reviewer.html"><span class="brand-symbol">知</span><span><strong>知天后台</strong><small>Review Console</small></span></a>
         <nav class="side-nav" aria-label="审核工作台导航">
-          <a class="active" href="#pendingReviewPanel">待审核</a><a href="#documentManagementPanel">文档管理</a><a href="#retrieveDebugPanel">检索调试</a><a href="#memoryOverviewPanel">记忆总览</a>
-          <button id="developerViewButton" class="nav-button">开发者视图</button>
+          <a class="active" href="#employeeAccessPanel">员工账号审批</a><a href="#pendingReviewPanel">待审核</a><a href="#documentManagementPanel">文档管理</a><a href="#retrieveDebugPanel">检索调试</a><a href="#memoryOverviewPanel">记忆总览</a><a href="#passwordResetPanel">密码重置记录</a>
         </nav>
         <div class="sidebar-note"><span class="status-dot"></span><div><strong>知识治理在线</strong><small>仅 verified 内容参与检索</small></div></div>
         <div class="account-card"><div class="account-avatar">审</div><div><strong id="currentUser"></strong><small>审核员</small></div></div>
@@ -20,14 +19,17 @@
       <main class="workspace">
         <header class="workspace-header"><div><p class="eyebrow">REVIEW CONSOLE</p><h1>审核工作台</h1><p class="muted">确权企业知识，并验证检索质量与运行状态</p></div><span class="context-badge">Reviewer only</span></header>
 
-        <section id="developerMetricsPanel" class="panel hidden">
-          <div class="section-title"><div><p class="section-kicker">OBSERVABILITY</p><h2>开发者视图</h2></div><button id="refreshMetrics" class="secondary">刷新指标</button></div>
-          <p id="metricsTimestamp" class="muted">数据截至 -</p><div id="metricsGrid" class="stats-grid metrics-grid"></div>
-          <section class="developer-section"><div class="section-title"><div><h3>系统提示词模块</h3><p class="muted">保存后从下一次模型请求开始生效</p></div><div class="module-actions"><button id="editSystemModules" class="secondary">修改模块</button><button id="saveSystemModules" class="hidden">保存模块</button></div></div><div class="module-editor-grid"><label>规范模块<textarea id="guidanceModule" rows="6" placeholder="定义知识依据、决策原则和处理规范" disabled></textarea></label><label>语气风格模块<textarea id="toneModule" rows="6" placeholder="定义回复语气、表达风格和内容组织方式" disabled></textarea></label><label>禁用模块<textarea id="forbiddenModule" rows="6" placeholder="定义全局禁止行为和内容边界" disabled></textarea></label></div><p id="systemModulesStatus" class="muted"></p></section>
-          <section class="developer-section"><h3>分阶段耗时分布</h3><div class="table-wrap"><table><thead><tr><th>阶段</th><th>平均耗时</th><th>调用次数</th></tr></thead><tbody id="stageTimingTable"></tbody></table></div></section>
-          <section class="developer-section"><h3>trace_id 明细</h3><div class="inline-form"><input id="traceIdQuery" type="text" placeholder="输入 trace_id" /><button id="traceIdSearch" class="secondary">查询</button></div><div id="traceDetail" class="result-box hidden"></div></section>
-          <section class="developer-section"><h3>请求耗时趋势</h3><svg id="requestTrendChart" class="trend-chart" viewBox="0 0 720 180" role="img" aria-label="请求耗时趋势"></svg><div class="table-wrap"><table><thead><tr><th>时间</th><th>模式</th><th>总耗时</th><th>状态</th></tr></thead><tbody id="requestTrendTable"></tbody></table></div></section>
-          <p class="system-note">进程内统计，服务重启后清零；不跨 worker 或实例聚合。</p>
+        <section id="enterprisePasswordPanel" class="panel"><div class="section-title"><div><p class="section-kicker">ENTERPRISE ACCESS</p><h2>当前企业密码</h2><p class="muted">每日凌晨4点自动刷新。</p></div></div><div class="enterprise-password-card stat-card"><strong id="enterprisePasswordValue">加载中...</strong><small id="enterprisePasswordRefresh">下次刷新：-</small></div></section>
+
+        <section id="employeeAccessPanel" class="panel table-panel">
+          <div class="section-title"><div><p class="section-kicker">ACCESS REVIEW</p><h2>员工账号审批</h2><p class="muted">仅展示申请employee角色的待审批记录。</p></div><button id="refreshEmployeeRequests" class="secondary">刷新申请</button></div>
+          <p id="employeeRequestStatus" class="message"></p>
+          <div class="table-wrap"><table><thead><tr><th>邮箱</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="employeeRequestsTable"></tbody></table></div>
+        </section>
+
+        <section id="passwordResetPanel" class="panel table-panel">
+          <div class="section-title"><div><p class="section-kicker">PASSWORD AUDIT</p><h2>最近密码重置</h2><p class="muted">仅展示最近20条事件，不包含任何密码内容。</p></div><button id="refreshPasswordResets" class="secondary">刷新记录</button></div>
+          <div class="table-wrap"><table><thead><tr><th>邮箱/用户名</th><th>重置时间</th></tr></thead><tbody id="passwordResetTable"></tbody></table></div>
         </section>
 
         <section id="pendingReviewPanel" class="panel reviewer-work-panel table-panel">
@@ -53,11 +55,6 @@
         </section>
       </main>
     </div>
-    <dialog id="systemModulesConfirm" class="confirm-dialog" aria-labelledby="systemModulesConfirmTitle">
-      <h3 id="systemModulesConfirmTitle">确认保存系统提示词模块？</h3>
-      <p class="muted">确定后，新内容将从下一次模型请求开始生效。</p>
-      <div class="dialog-actions"><button id="cancelSystemModulesSave" class="secondary">取消</button><button id="discardSystemModules" class="danger">放弃</button><button id="confirmSystemModulesSave">确定</button></div>
-    </dialog>
     <script src="./js/api.js"></script><script src="./js/reviewer.js"></script>
   </body>
 </html>

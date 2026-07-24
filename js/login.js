@@ -1,6 +1,7 @@
 const form = document.querySelector('#loginForm');
 const usernameInput = document.querySelector('#username');
 const passwordInput = document.querySelector('#password');
+const roleInput = document.querySelector('#role');
 const loginButton = document.querySelector('#loginButton');
 const message = document.querySelector('#message');
 
@@ -14,13 +15,13 @@ form.addEventListener('submit', async (event) => {
   message.textContent = '';
 
   try {
-    const data = await API.login(username, password);
+    const data = await API.login(username, password, roleInput.value);
     if (data.role === 'customer') {
       API.logout();
       message.textContent = '客户请使用桌面端应用';
       return;
     }
-    if (data.role !== 'employee' && data.role !== 'reviewer') {
+    if (!['employee', 'reviewer', 'developer'].includes(data.role)) {
       API.logout();
       message.textContent = '该账号无管理后台权限';
       return;
@@ -29,7 +30,12 @@ form.addEventListener('submit', async (event) => {
     localStorage.setItem('auth_token', data.token);
     localStorage.setItem('user_role', data.role);
     localStorage.setItem('username', username);
-    location.replace(data.role === 'reviewer' ? './reviewer.html' : './employee.html');
+    const destinations = {
+      employee: './employee.html',
+      reviewer: './reviewer.html',
+      developer: './developer.html',
+    };
+    location.replace(destinations[data.role]);
   } catch (error) {
     message.textContent = briefError(error);
   } finally {
