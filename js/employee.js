@@ -4,10 +4,8 @@ if (API.ensureRole(['employee', 'reviewer'])) {
 
 function initEmployeePage() {
   document.querySelector('#currentUser').textContent = `当前账号：${localStorage.getItem('username') || '-'}`;
-  document.querySelector('#logoutButton').addEventListener('click', () => {
-    API.logout();
-    location.replace('./login.html');
-  });
+  AccountSwitcher.mount();
+  document.querySelector('#logoutButton').addEventListener('click', () => AccountSwitcher.handleLogout());
   document.querySelector('#uploadForm').addEventListener('submit', uploadDocument);
   document.querySelector('#documentFile').addEventListener('change', showConversionHint);
   document.querySelector('#knowledgeForm').addEventListener('submit', inputKnowledge);

@@ -9,8 +9,8 @@
   <body class="auth-page">
     <main class="auth-shell">
       <section class="auth-card">
-        <div class="brand-mark" aria-hidden="true">知</div>
-        <div class="auth-heading">
+        <div class="brand-mark login-brand" aria-hidden="true">知</div>
+        <div class="auth-heading login-heading">
           <p class="eyebrow">KNOWLEDGE OPERATIONS</p>
           <h1>知天管理后台</h1>
           <p class="muted">企业知识治理与运行诊断工作台</p>
@@ -26,18 +26,19 @@
           </label>
           <label>
             <span>账号类型</span>
-            <select id="role" name="role" required>
-              <option value="employee">员工</option>
-              <option value="reviewer">审核员</option>
-              <option value="developer">开发者</option>
-            </select>
+            <div class="role-toggle" role="radiogroup" aria-label="账号类型">
+              <button type="button" class="role-toggle-option active" data-role="employee" aria-pressed="true">员工</button>
+              <button type="button" class="role-toggle-option" data-role="reviewer" aria-pressed="false">审核员</button>
+              <button type="button" class="role-toggle-option" data-role="developer" aria-pressed="false">开发者</button>
+            </div>
+            <input type="hidden" id="role" name="role" value="employee" required />
           </label>
           <p id="message" class="message" aria-live="polite"></p>
           <button id="loginButton" type="submit" class="btn-block">登录工作台</button>
         </form>
-        <p class="auth-link"><a href="./request-access.html">申请企业角色账号</a><span aria-hidden="true"> · </span><a href="./forgot-password.html">忘记密码</a></p>
+        <div class="auth-link auth-link-split"><a href="./request-access.html">申请企业角色账号</a><a href="./forgot-password.html">忘记密码</a></div>
         <div class="role-note"><span>员工 · 知识提交</span><span>审核员 · 知识治理</span></div>
-        <p class="auth-footer">知天 Agent Platform · v1.9</p>
+        <p class="auth-footer">知天 Agent Platform · v2.1</p>
       </section>
     </main>
     <script src="./js/api.js"></script>

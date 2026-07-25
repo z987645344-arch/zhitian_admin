@@ -9,7 +9,7 @@
       <aside class="sidebar">
         <a class="brand" href="./reviewer.html"><span class="brand-symbol">知</span><span><strong>知天后台</strong><small>Review Console</small></span></a>
         <nav class="side-nav" aria-label="审核工作台导航">
-          <a class="active" href="#employeeAccessPanel">员工账号审批</a><a href="#pendingReviewPanel">待审核</a><a href="#documentManagementPanel">文档管理</a><a href="#retrieveDebugPanel">检索调试</a><a href="#memoryOverviewPanel">记忆总览</a><a href="#passwordResetPanel">密码重置记录</a>
+          <a class="active" href="#employeeAccessPanel">员工账号审批</a><a href="#pendingReviewPanel">待审核</a><a href="#documentManagementPanel">文档管理</a><a href="#retrieveDebugPanel">检索调试</a><a href="#memoryOverviewPanel">记忆总览</a>
         </nav>
         <div class="sidebar-note"><span class="status-dot"></span><div><strong>知识治理在线</strong><small>仅 verified 内容参与检索</small></div></div>
         <div class="account-card"><div class="account-avatar">审</div><div><strong id="currentUser"></strong><small>审核员</small></div></div>
@@ -25,11 +25,6 @@
           <div class="section-title"><div><p class="section-kicker">ACCESS REVIEW</p><h2>员工账号审批</h2><p class="muted">仅展示申请employee角色的待审批记录。</p></div><button id="refreshEmployeeRequests" class="secondary">刷新申请</button></div>
           <p id="employeeRequestStatus" class="message"></p>
           <div class="table-wrap"><table><thead><tr><th>邮箱</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="employeeRequestsTable"></tbody></table></div>
-        </section>
-
-        <section id="passwordResetPanel" class="panel table-panel">
-          <div class="section-title"><div><p class="section-kicker">PASSWORD AUDIT</p><h2>最近密码重置</h2><p class="muted">仅展示最近20条事件，不包含任何密码内容。</p></div><button id="refreshPasswordResets" class="secondary">刷新记录</button></div>
-          <div class="table-wrap"><table><thead><tr><th>邮箱/用户名</th><th>重置时间</th></tr></thead><tbody id="passwordResetTable"></tbody></table></div>
         </section>
 
         <section id="pendingReviewPanel" class="panel reviewer-work-panel table-panel">
@@ -55,6 +50,6 @@
         </section>
       </main>
     </div>
-    <script src="./js/api.js"></script><script src="./js/reviewer.js"></script>
+    <script src="./js/api.js"></script><script src="./js/account-switcher.js"></script><script src="./js/reviewer.js"></script>
   </body>
 </html>

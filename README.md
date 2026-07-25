@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/z987645344-arch/zhitian_admin/actions/workflows/ci.yml/badge.svg)](https://github.com/z987645344-arch/zhitian_admin/actions/workflows/ci.yml)
 ![Frontend](https://img.shields.io/badge/frontend-HTML%20%2B%20CSS%20%2B%20JavaScript-F7DF1E?logo=javascript&logoColor=111)
-![Release](https://img.shields.io/badge/release-v1.9-B87333)
+![Release](https://img.shields.io/badge/release-v2.1-B87333)
 
 知天管理后台是 [知天 Agent Platform](https://github.com/z987645344-arch/zhitian) 的企业知识治理与运行诊断界面。它没有引入重型前端框架，使用原生 HTML/CSS/JavaScript 完成员工上传、审核员确权、检索调试和请求级可观测性展示。
 
