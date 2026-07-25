@@ -2,8 +2,27 @@ const form = document.querySelector('#loginForm');
 const usernameInput = document.querySelector('#username');
 const passwordInput = document.querySelector('#password');
 const roleInput = document.querySelector('#role');
+const roleToggleButtons = document.querySelectorAll('.role-toggle-option');
 const loginButton = document.querySelector('#loginButton');
 const message = document.querySelector('#message');
+
+const authNotice = sessionStorage.getItem('auth_notice');
+if (authNotice) {
+  message.textContent = authNotice;
+  sessionStorage.removeItem('auth_notice');
+}
+
+roleToggleButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    roleToggleButtons.forEach((option) => {
+      option.classList.remove('active');
+      option.setAttribute('aria-pressed', 'false');
+    });
+    button.classList.add('active');
+    button.setAttribute('aria-pressed', 'true');
+    roleInput.value = button.dataset.role;
+  });
+});
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -27,9 +46,8 @@ form.addEventListener('submit', async (event) => {
       return;
     }
 
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('user_role', data.role);
-    localStorage.setItem('username', username);
+    API.addOrUpdateSavedAccount(username, data.role, data.token);
+    API.setActiveAccount(username, data.role);
     const destinations = {
       employee: './employee.html',
       reviewer: './reviewer.html',

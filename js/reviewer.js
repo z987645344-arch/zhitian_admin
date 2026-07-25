@@ -4,15 +4,12 @@ if (API.ensureRole(['reviewer'])) {
 
 function initReviewerPage() {
   document.querySelector('#currentUser').textContent = `当前账号：${localStorage.getItem('username') || '-'}`;
-  document.querySelector('#logoutButton').addEventListener('click', () => {
-    API.logout();
-    location.replace('./login.html');
-  });
+  AccountSwitcher.mount();
+  document.querySelector('#logoutButton').addEventListener('click', () => AccountSwitcher.handleLogout());
   document.querySelector('#refreshPending').addEventListener('click', loadPending);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
   document.querySelector('#refreshEmployeeRequests').addEventListener('click', loadEmployeeRequests);
-  document.querySelector('#refreshPasswordResets').addEventListener('click', loadPasswordResetEvents);
   document.querySelector('#runDebugRetrieve').addEventListener('click', runDebugRetrieve);
   document.querySelector('#debugQuery').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') runDebugRetrieve();
@@ -21,7 +18,6 @@ function initReviewerPage() {
   loadDocuments();
   loadStats();
   loadEmployeeRequests();
-  loadPasswordResetEvents();
   loadEnterprisePassword();
 }
 
@@ -36,16 +32,6 @@ async function loadEnterprisePassword() {
     value.textContent = '暂无法加载';
     refresh.textContent = briefError(error);
   }
-}
-
-async function loadPasswordResetEvents() {
-  const table = document.querySelector('#passwordResetTable');
-  table.innerHTML = rowMessage('加载中...', 2);
-  try {
-    const data = await API.reviewerPasswordResetEvents();
-    const events = Array.isArray(data.events) ? data.events : [];
-    table.innerHTML = events.length ? events.map((item) => `<tr><td>${escapeHtml(item.username || '-')}</td><td>${escapeHtml(formatTimestamp(item.created_at))}</td></tr>`).join('') : rowMessage('暂无密码重置记录', 2);
-  } catch (error) { table.innerHTML = rowMessage(briefError(error), 2); }
 }
 
 async function loadEmployeeRequests() {

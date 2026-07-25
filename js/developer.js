@@ -18,10 +18,14 @@ const requestTrendTable = document.querySelector('#requestTrendTable');
 
 function initDeveloperPage() {
   document.querySelector('#currentUser').textContent = localStorage.getItem('username') || '-';
-  document.querySelector('#logoutButton').addEventListener('click', () => { API.logout(); location.replace('./login.html'); });
+  AccountSwitcher.mount();
+  document.querySelector('#logoutButton').addEventListener('click', () => AccountSwitcher.handleLogout());
   document.querySelector('#refreshRequests').addEventListener('click', loadRequests);
   document.querySelector('#refreshUsers').addEventListener('click', loadPersonnelOverview);
-  document.querySelector('#refreshPasswordResets').addEventListener('click', loadPasswordResetEvents);
+  document.querySelector('#refreshEnterprisePassword').addEventListener('click', () => document.querySelector('#enterprisePasswordRefreshConfirm').showModal());
+  document.querySelector('#cancelEnterprisePasswordRefresh').addEventListener('click', () => document.querySelector('#enterprisePasswordRefreshConfirm').close());
+  document.querySelector('#confirmEnterprisePasswordRefresh').addEventListener('click', refreshEnterprisePassword);
+  document.querySelector('#refreshEmailUsage').addEventListener('click', loadEmailUsage);
   document.querySelector('#refreshMetrics').addEventListener('click', loadMetrics);
   document.querySelector('#traceIdSearch').addEventListener('click', renderTraceDetail);
   document.querySelector('#editSystemModules').addEventListener('click', () => setModuleEditing(true));
@@ -29,7 +33,9 @@ function initDeveloperPage() {
   document.querySelector('#cancelSystemModulesSave').addEventListener('click', closeModuleDialog);
   document.querySelector('#discardSystemModules').addEventListener('click', discardModules);
   document.querySelector('#confirmSystemModulesSave').addEventListener('click', saveModules);
-  Promise.all([loadEnterprisePassword(), loadPersonnelOverview(), loadPasswordResetEvents(), loadModules(), loadMetrics()]).then(loadRequests);
+  document.querySelector('#refreshOrganizations').addEventListener('click', loadOrganizations);
+  document.querySelector('#createOrganizationForm').addEventListener('submit', handleCreateOrganization);
+  Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadOrganizations(), loadModules(), loadMetrics()]).then(loadRequests);
 }
 
 async function loadEnterprisePassword() {
@@ -42,6 +48,38 @@ async function loadEnterprisePassword() {
   } catch (error) {
     value.textContent = '暂无法加载';
     refresh.textContent = briefError(error);
+  }
+}
+
+async function loadEmailUsage() {
+  const value = document.querySelector('#emailUsageValue');
+  const detail = document.querySelector('#emailUsageDetail');
+  try {
+    const data = await API.developerEmailUsage();
+    value.textContent = `${Number(data.used_today || 0)} / ${Number(data.daily_limit || 0)}`;
+    detail.textContent = `业务日：${data.business_day || '-'}`;
+  } catch (error) {
+    value.textContent = '暂无法加载';
+    detail.textContent = briefError(error);
+  }
+}
+
+async function refreshEnterprisePassword() {
+  const dialog = document.querySelector('#enterprisePasswordRefreshConfirm');
+  const button = document.querySelector('#confirmEnterprisePasswordRefresh');
+  const value = document.querySelector('#enterprisePasswordValue');
+  const refresh = document.querySelector('#enterprisePasswordRefresh');
+  button.disabled = true;
+  try {
+    const data = await API.refreshEnterprisePassword();
+    value.textContent = data.password || '-';
+    refresh.textContent = `下次刷新：${formatTimestamp(data.next_refresh_at)}`;
+    dialog.close();
+  } catch (error) {
+    refresh.textContent = briefError(error);
+    dialog.close();
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -79,9 +117,11 @@ function renderRequestTable(table, requests, blockApproval) {
 }
 
 async function loadPersonnelOverview() {
-  const table = document.querySelector('#personnelTable');
+  const developerTable = document.querySelector('#developerPersonnelTable');
+  const reviewerTable = document.querySelector('#reviewerPersonnelTable');
   const grid = document.querySelector('#headcountGrid');
-  table.innerHTML = rowMessage('加载中...', 7);
+  developerTable.innerHTML = rowMessage('加载中...', 6);
+  reviewerTable.innerHTML = rowMessage('加载中...', 6);
   grid.innerHTML = '<p class="muted">加载中...</p>';
   try {
     const [stats, detail] = await Promise.all([API.developerHeadcountStats(), API.developerPersonnelDetail()]);
@@ -90,13 +130,22 @@ async function loadPersonnelOverview() {
     currentDeveloper = users.find((item) => item.username === username && item.role === 'developer') || null;
     document.querySelector('#headcountDate').textContent = `统计日期 ${stats.snapshot_date || '-'}${stats.previous_snapshot_date ? ` · 对比 ${stats.previous_snapshot_date}` : ' · 暂无上次快照'}`;
     grid.innerHTML = [['developer','开发者'],['reviewer','审核员'],['employee','员工'],['customer','客户']].map(([role,label]) => headcountCard(label, stats.counts?.[role], stats.changes?.[role])).join('');
-    table.innerHTML = users.length ? users.map(personnelRow).join('') : rowMessage('暂无开发者或审核员账号', 7);
-    table.querySelectorAll('.flag-button').forEach((button) => button.addEventListener('click', () => toggleFlag(button)));
-    table.querySelectorAll('[data-save-notes]').forEach((button) => button.addEventListener('click', () => saveNotes(button.dataset.saveNotes)));
+    const developers = users.filter((item) => item.role === 'developer');
+    const reviewers = users.filter((item) => item.role === 'reviewer');
+    developerTable.innerHTML = developers.length ? developers.map(personnelRow).join('') : rowMessage('暂无开发者账号', 6);
+    reviewerTable.innerHTML = reviewers.length ? reviewers.map(personnelRow).join('') : rowMessage('暂无审核员账号', 6);
+    bindPersonnelRowEvents(developerTable);
+    bindPersonnelRowEvents(reviewerTable);
   } catch (error) {
     grid.innerHTML = `<p class="message">${escapeHtml(briefError(error))}</p>`;
-    table.innerHTML = rowMessage(briefError(error), 7);
+    developerTable.innerHTML = rowMessage(briefError(error), 6);
+    reviewerTable.innerHTML = rowMessage(briefError(error), 6);
   }
+}
+
+function bindPersonnelRowEvents(table) {
+  table.querySelectorAll('.flag-button').forEach((button) => button.addEventListener('click', () => toggleFlag(button)));
+  table.querySelectorAll('[data-edit-notes]').forEach((button) => button.addEventListener('click', () => beginNotesEdit(button.dataset.editNotes)));
 }
 
 function headcountCard(label, count, change) {
@@ -106,7 +155,12 @@ function headcountCard(label, count, change) {
 }
 
 function personnelRow(item) {
-  return `<tr><td>${escapeHtml(item.username || '-')}</td><td>${escapeHtml(item.role || '-')}</td><td><span class="status-badge ${item.is_active ? 'status-verified' : 'status-pending'}">${item.is_active ? '启用' : '禁用'}</span></td><td>${item.is_default_account ? '是' : '否'}</td><td>${escapeHtml(formatTimestamp(item.last_login_at))}</td><td><button class="flag-button ${item.flagged ? 'is-flagged' : ''}" data-user="${item.user_id}" data-flagged="${Boolean(item.flagged)}" title="切换特别关注" aria-label="切换特别关注">${item.flagged ? '★' : '☆'}</button></td><td><div class="notes-control"><input data-notes-for="${item.user_id}" value="${escapeHtml(item.notes || '')}" maxlength="500" placeholder="添加内部备注" /><button class="secondary" data-save-notes="${item.user_id}">保存</button></div></td></tr>`;
+  const notes = item.notes || '';
+  return `<tr><td>${escapeHtml(item.username || '-')}</td><td><span class="status-badge ${item.is_active ? 'status-verified' : 'status-pending'}">${item.is_active ? '启用' : '禁用'}</span></td><td>${item.is_default_account ? '是' : '否'}</td><td>${escapeHtml(formatTimestamp(item.last_login_at))}</td><td><button class="flag-button ${item.flagged ? 'is-flagged' : ''}" data-user="${item.user_id}" data-flagged="${Boolean(item.flagged)}" title="切换特别关注" aria-label="切换特别关注">${item.flagged ? '★' : '☆'}</button></td><td class="notes-cell" data-user-notes="${item.user_id}" data-notes-value="${escapeHtml(notes)}">${notesViewMarkup(item.user_id, notes)}</td></tr>`;
+}
+
+function notesViewMarkup(userId, notes) {
+  return `<div class="notes-view"><span class="notes-text">${escapeHtml(notes || '暂无备注')}</span><button class="secondary" data-edit-notes="${userId}">编辑</button></div>`;
 }
 
 async function toggleFlag(button) {
@@ -118,30 +172,119 @@ async function toggleFlag(button) {
   } catch (error) { status.textContent = briefError(error); }
 }
 
-async function saveNotes(userId) {
+function beginNotesEdit(userId) {
+  const cell = document.querySelector(`.notes-cell[data-user-notes="${userId}"]`);
+  if (!cell) return;
+  const currentValue = cell.dataset.notesValue || '';
+  cell.innerHTML = `<div class="notes-edit"><input class="notes-edit-input" value="${escapeHtml(currentValue)}" maxlength="500" placeholder="添加内部备注" /><button data-save-notes="${userId}">保存</button></div>`;
+  cell.querySelector('[data-save-notes]').addEventListener('click', () => saveNotes(userId, cell));
+  cell.querySelector('.notes-edit-input').focus();
+}
+
+async function saveNotes(userId, cell) {
+  const input = cell.querySelector('.notes-edit-input');
+  const saveButton = cell.querySelector('[data-save-notes]');
+  const newValue = input.value;
   const status = document.querySelector('#usersStatus');
+  saveButton.disabled = true;
   try {
-    await API.savePersonnelNotes(userId, document.querySelector(`[data-notes-for="${userId}"]`).value);
+    await API.savePersonnelNotes(userId, newValue);
+    cell.dataset.notesValue = newValue;
+    cell.innerHTML = notesViewMarkup(userId, newValue);
+    cell.querySelector('[data-edit-notes]').addEventListener('click', () => beginNotesEdit(userId));
     status.textContent = '备注已保存';
-  } catch (error) { status.textContent = briefError(error); }
+  } catch (error) {
+    status.textContent = briefError(error);
+    saveButton.disabled = false;
+  }
 }
 
-async function loadPasswordResetEvents() {
-  const table = document.querySelector('#passwordResetTable');
-  table.innerHTML = rowMessage('加载中...', 2);
-  try {
-    const data = await API.developerPasswordResetEvents();
-    const events = Array.isArray(data.events) ? data.events : [];
-    table.innerHTML = events.length ? events.map((item) => `<tr><td>${escapeHtml(item.username || '-')}</td><td>${escapeHtml(formatTimestamp(item.created_at))}</td></tr>`).join('') : rowMessage('暂无密码重置记录', 2);
-  } catch (error) { table.innerHTML = rowMessage(briefError(error), 2); }
-}
-
-function moduleValues() { return { guidance: guidanceModule.value, tone: toneModule.value, forbidden: forbiddenModule.value }; }
-function setModuleEditing(editing) { [guidanceModule,toneModule,forbiddenModule].forEach((item) => { item.disabled = !editing; }); editSystemModules.classList.toggle('hidden', editing); saveSystemModules.classList.toggle('hidden', !editing); }
+function moduleValues() { return { tone: toneModule.value, forbidden: forbiddenModule.value }; }
+function setModuleEditing(editing) { [toneModule,forbiddenModule].forEach((item) => { item.disabled = !editing; }); editSystemModules.classList.toggle('hidden', editing); saveSystemModules.classList.toggle('hidden', !editing); }
 async function loadModules() { try { const data = await API.systemModules(); guidanceModule.value=data.guidance?.content||''; toneModule.value=data.tone?.content||''; forbiddenModule.value=data.forbidden?.content||''; window.savedModules=moduleValues(); setModuleEditing(false); systemModulesStatus.textContent='模块已加载'; } catch(error) { systemModulesStatus.textContent=briefError(error); } }
 function closeModuleDialog() { systemModulesConfirm.close(); }
-function discardModules() { const values=window.savedModules||{guidance:'',tone:'',forbidden:''}; guidanceModule.value=values.guidance; toneModule.value=values.tone; forbiddenModule.value=values.forbidden; closeModuleDialog(); setModuleEditing(false); systemModulesStatus.textContent='已放弃本次修改'; }
+function discardModules() { const values=window.savedModules||{tone:'',forbidden:''}; toneModule.value=values.tone; forbiddenModule.value=values.forbidden; closeModuleDialog(); setModuleEditing(false); systemModulesStatus.textContent='已放弃本次修改'; }
 async function saveModules() { try { const values=moduleValues(); await API.saveSystemModules(values); window.savedModules=values; closeModuleDialog(); setModuleEditing(false); systemModulesStatus.textContent='已保存，将从下一次请求生效'; } catch(error) { systemModulesStatus.textContent=briefError(error); } }
+
+async function loadOrganizations() {
+  const table = document.querySelector('#organizationsTable');
+  table.innerHTML = rowMessage('加载中...', 4);
+  try {
+    const data = await API.listOrganizations();
+    const items = Array.isArray(data.organizations) ? data.organizations : [];
+    table.innerHTML = items.length ? items.map(organizationRow).join('') : rowMessage('暂无组织', 4);
+    table.querySelectorAll('[data-edit-org]').forEach((button) => button.addEventListener('click', () => beginOrganizationEdit(button.dataset.editOrg)));
+    table.querySelectorAll('[data-delete-org]').forEach((button) => {
+      const row = button.closest('tr');
+      button.addEventListener('click', () => deleteOrganizationHandler(button.dataset.deleteOrg, row.dataset.orgName));
+    });
+  } catch (error) {
+    table.innerHTML = rowMessage(briefError(error), 4);
+  }
+}
+
+function organizationRow(item) {
+  const actions = item.is_protected
+    ? '<span class="muted">默认组织不可修改</span>'
+    : `<div class="actions"><button class="secondary" data-edit-org="${item.id}">编辑</button><button class="danger" data-delete-org="${item.id}">删除</button></div>`;
+  return `<tr data-org-id="${item.id}" data-org-name="${escapeHtml(item.name)}" data-org-content="${escapeHtml(item.content || '')}"><td class="org-name-cell">${escapeHtml(item.name)}${item.is_protected ? ' <span class="badge">受保护</span>' : ''}</td><td class="org-content-cell">${escapeHtml(item.content || '-')}</td><td>${Number(item.member_count || 0)}</td><td class="org-actions-cell">${actions}</td></tr>`;
+}
+
+function beginOrganizationEdit(id) {
+  const row = document.querySelector(`tr[data-org-id="${id}"]`);
+  if (!row) return;
+  const name = row.dataset.orgName;
+  const content = row.dataset.orgContent;
+  row.querySelector('.org-name-cell').innerHTML = `<input class="org-edit-name" value="${escapeHtml(name)}" maxlength="50" />`;
+  row.querySelector('.org-content-cell').innerHTML = `<input class="org-edit-content" value="${escapeHtml(content)}" maxlength="200" />`;
+  row.querySelector('.org-actions-cell').innerHTML = `<div class="actions"><button data-save-org="${id}">保存</button><button class="secondary" data-cancel-org="${id}">取消</button></div>`;
+  row.querySelector('[data-save-org]').addEventListener('click', () => saveOrganizationEdit(id, row));
+  row.querySelector('[data-cancel-org]').addEventListener('click', loadOrganizations);
+}
+
+async function saveOrganizationEdit(id, row) {
+  const name = row.querySelector('.org-edit-name').value.trim();
+  const content = row.querySelector('.org-edit-content').value.trim();
+  const status = document.querySelector('#organizationsStatus');
+  try {
+    await API.updateOrganization(id, { name, content: content || null });
+    status.textContent = '组织已更新';
+    await Promise.all([loadOrganizations(), loadModules()]);
+  } catch (error) {
+    status.textContent = briefError(error);
+  }
+}
+
+async function deleteOrganizationHandler(id, name) {
+  if (!confirm(`确认删除组织"${name}"？相关账号的组织关联将被清除，账号本身不受影响。`)) return;
+  const status = document.querySelector('#organizationsStatus');
+  try {
+    await API.deleteOrganization(id);
+    status.textContent = '组织已删除';
+    await Promise.all([loadOrganizations(), loadModules()]);
+  } catch (error) {
+    status.textContent = briefError(error);
+  }
+}
+
+async function handleCreateOrganization(event) {
+  event.preventDefault();
+  const nameInput = document.querySelector('#newOrganizationName');
+  const contentInput = document.querySelector('#newOrganizationContent');
+  const status = document.querySelector('#organizationsStatus');
+  const name = nameInput.value.trim();
+  const content = contentInput.value.trim();
+  if (!name) return;
+  try {
+    await API.createOrganization(name, content || null);
+    nameInput.value = '';
+    contentInput.value = '';
+    status.textContent = '组织已创建';
+    await Promise.all([loadOrganizations(), loadModules()]);
+  } catch (error) {
+    status.textContent = briefError(error);
+  }
+}
 
 async function loadMetrics() {
   metricsGrid.innerHTML='<p class="muted">加载中...</p>';
@@ -155,7 +298,47 @@ async function loadMetrics() {
 }
 function renderStageTimings(records) { const stages={}; records.forEach((record)=>Object.entries(record.stage_timings||{}).forEach(([name,time])=>{const item=stages[name]||{total:0,count:0};item.total+=Number(time||0);item.count++;stages[name]=item;})); const rows=Object.entries(stages); stageTimingTable.innerHTML=rows.length?rows.map(([name,item])=>`<tr><td>${escapeHtml(name)}</td><td>${Math.round(item.total/item.count)}ms</td><td>${item.count}</td></tr>`).join(''):rowMessage('暂无阶段数据',3); }
 function renderTraceDetail() { const id=traceIdQuery.value.trim(); if(!id){traceDetail.classList.add('hidden');return;} const record=(window.latestMetrics?.recent_requests||[]).find((item)=>item.trace_id===id); traceDetail.classList.remove('hidden'); traceDetail.textContent=record?`模式：${record.mode}；状态：${record.status}；总耗时：${record.total_elapsed_ms}ms；阶段：${JSON.stringify(record.stage_timings||{})}`:'未找到该 trace_id。'; }
-function renderTrend(records) { const recent=records.slice(-30), values=recent.map((item)=>Number(item.total_elapsed_ms||0)), maximum=Math.max(...values,1), points=values.map((value,index)=>`${24+(672*index/Math.max(values.length-1,1))},${156-(132*value/maximum)}`); requestTrendChart.innerHTML=recent.length?`<polyline class="trend-line" points="${points.join(' ')}" />`:''; requestTrendTable.innerHTML=recent.length?recent.slice().reverse().map((item)=>`<tr><td>${escapeHtml(formatTimestamp(item.timestamp))}</td><td>${escapeHtml(item.mode||'-')}</td><td>${Number(item.total_elapsed_ms||0)}ms</td><td>${escapeHtml(item.status||'-')}</td></tr>`).join(''):rowMessage('暂无趋势数据',4); }
+function renderTrend(records) {
+  const recent = records.slice(-30);
+  const values = recent.map((item) => Number(item.total_elapsed_ms || 0));
+  const maximum = Math.max(...values, 1);
+  const points = values.map((value, index) => `${24 + (672 * index / Math.max(values.length - 1, 1))},${156 - (132 * value / maximum)}`);
+  requestTrendChart.innerHTML = recent.length ? `<polyline class="trend-line" points="${points.join(' ')}" />` : '';
+  requestTrendTable.innerHTML = recent.length ? recent.slice().reverse().map((item) => `<tr><td>${escapeHtml(formatTimestamp(item.timestamp))}</td><td>${traceIdCell(item.trace_id)}</td><td>${escapeHtml(item.mode||'-')}</td><td>${Number(item.total_elapsed_ms||0)}ms</td><td>${escapeHtml(item.status||'-')}</td></tr>`).join('') : rowMessage('暂无趋势数据', 5);
+  requestTrendTable.querySelectorAll('.trace-copy').forEach((button) => button.addEventListener('click', () => copyTraceId(button)));
+}
+
+function traceIdCell(traceId) {
+  const value = traceId || '';
+  if (!value) return '<span class="muted">-</span>';
+  return `<button class="trace-copy" type="button" data-trace-id="${escapeHtml(value)}" title="点击复制trace_id">${escapeHtml(value)}</button>`;
+}
+
+async function copyTraceId(button) {
+  const value = button.dataset.traceId;
+  if (!value) return;
+  const original = value;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = value;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    button.textContent = '已复制';
+    button.disabled = true;
+    setTimeout(() => { button.textContent = original; button.disabled = false; }, 1200);
+  } catch (error) {
+    button.textContent = '复制失败';
+    setTimeout(() => { button.textContent = original; }, 1200);
+  }
+}
 function rowMessage(text,colspan){return `<tr><td colspan="${colspan}" class="muted">${escapeHtml(text)}</td></tr>`;}
 function briefError(error){return String(error.message||error).replaceAll('\n',' ').slice(0,120);}
 function formatTimestamp(value){if(!value)return '-';const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString();}

@@ -9,9 +9,14 @@ sendCodeButton.addEventListener('click', async () => {
   if (!email.includes('@') || !email.split('@').pop().includes('.')) {
     message.textContent = '请输入有效的邮箱地址'; return;
   }
+  // 后端已把企业密码校验前置到发送验证码，未填写时不发起请求
+  const enterprisePassword = document.querySelector('#enterprisePassword').value;
+  if (!enterprisePassword) {
+    message.textContent = '请先填写企业密码'; return;
+  }
   sendCodeButton.disabled = true;
   try {
-    const result = await API.sendVerificationCode(email, 'reset_password');
+    const result = await API.sendVerificationCode(email, 'reset_password', enterprisePassword);
     message.textContent = result.detail;
   } catch (error) {
     message.textContent = String(error.message || error);
