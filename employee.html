@@ -12,6 +12,7 @@
         <a class="brand" href="./employee.html"><span class="brand-symbol">知</span><span><strong>知天后台</strong><small>Knowledge Ops</small></span></a>
         <nav class="side-nav" aria-label="员工工作台导航">
           <a class="active" href="#overview">工作台</a>
+          <a href="#lobby-section">组织大厅</a>
           <a href="#upload-section">上传文档</a>
           <a href="#entry-section">文字录入</a>
           <a href="#documents-section">我的文档</a>
@@ -33,10 +34,22 @@
           <i></i><div><span>03</span><strong>检索生效</strong><small>进入 verified 知识库</small></div>
         </section>
 
+        <section id="lobby-section" class="panel">
+          <div class="section-title"><div><p class="section-kicker">LOBBY</p><h2>组织大厅</h2></div><button id="refreshLobby" class="secondary">刷新</button></div>
+          <p class="section-copy">「默认」大厅面向全体成员，无需申请；下方功能群需申请加入，加入后才能上传文档与录入知识。</p>
+          <div id="lobbyContent" class="lobby-grid"></div>
+          <div class="section-title compact"><div><p class="section-kicker">DIRECTORY</p><h2>组织目录</h2></div></div>
+          <p id="lobbyMessage" class="message" aria-live="polite"></p>
+          <div id="organizationDirectory" class="org-grid"></div>
+        </section>
+
+        <p id="workGateNotice" class="gate-notice hidden" role="status"></p>
+
         <div class="content-grid two-column">
           <section id="upload-section" class="panel feature-panel">
             <div class="section-title"><div><p class="section-kicker">DOCUMENT</p><h2>上传文档</h2></div><span class="format-label">最大 20MB</span></div>
             <p class="section-copy">支持常用文档与 Office 格式；旧版 Office 文件将自动转换后解析。</p>
+            <div id="uploadOrgField" class="org-target-field"></div>
             <form id="uploadForm" class="upload-zone">
               <input id="documentFile" type="file" accept=".txt,.md,.pdf,.docx,.doc,.xls,.xlsx,.ppt,.pptx" required />
               <button id="uploadButton" type="submit">上传并提交审核</button>
@@ -47,6 +60,7 @@
 
           <section id="entry-section" class="panel feature-panel">
             <div class="section-title"><div><p class="section-kicker">MANUAL ENTRY</p><h2>直接录入文字</h2></div><span class="format-label">结构化知识</span></div>
+            <div id="knowledgeOrgField" class="org-target-field"></div>
             <form id="knowledgeForm" class="form-stack compact-form">
               <label><span>知识标题</span><input id="knowledgeTitle" placeholder="例如：售后流程说明" /></label>
               <label><span>文字内容</span><textarea id="knowledgeContent" placeholder="输入需要进入知识库的内容" required></textarea></label>
@@ -63,6 +77,6 @@
         </section>
       </main>
     </div>
-    <script src="./js/api.js"></script><script src="./js/account-switcher.js"></script><script src="./js/employee.js"></script>
+    <script src="./js/api.js"></script><script src="./js/account-switcher.js"></script><script src="./js/org-lobby.js"></script><script src="./js/employee.js"></script>
   </body>
 </html>

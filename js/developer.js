@@ -35,7 +35,71 @@ function initDeveloperPage() {
   document.querySelector('#confirmSystemModulesSave').addEventListener('click', saveModules);
   document.querySelector('#refreshOrganizations').addEventListener('click', loadOrganizations);
   document.querySelector('#createOrganizationForm').addEventListener('submit', handleCreateOrganization);
-  Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadOrganizations(), loadModules(), loadMetrics()]).then(loadRequests);
+  document.querySelector('#refreshOrgMembership').addEventListener('click', loadOrgMembershipRequests);
+  document.querySelector('#editLobbyContent').addEventListener('click', () => setLobbyEditing(true));
+  document.querySelector('#saveLobbyContent').addEventListener('click', saveLobbyContent);
+  Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadOrganizations(), loadOrgMembershipRequests(), loadLobbyContent(), loadModules(), loadMetrics()]).then(loadRequests);
+}
+
+async function loadOrgMembershipRequests() {
+  const table = document.querySelector('#orgMembershipTable');
+  const status = document.querySelector('#orgMembershipStatus');
+  table.innerHTML = `<tr><td colspan="6" class="muted">加载中...</td></tr>`;
+  status.textContent = '';
+  try {
+    const data = await API.developerOrgMembershipRequests();
+    const requests = Array.isArray(data.requests) ? data.requests : [];
+    table.innerHTML = requests.length ? requests.map((item) => {
+      const roleLabel = item.applicant_role === 'reviewer' ? '审核员' : '员工';
+      const fallback = item.cold_start_fallback ? ' <span class="badge badge-pending">冷启动兜底</span>' : '';
+      return `<tr><td>${escapeHtml(item.username || '-')}</td><td>${roleLabel}${fallback}</td><td>${escapeHtml(item.organization_name || '-')}</td><td>${item.action === 'join' ? '申请加入' : '申请退出'}</td><td>${escapeHtml(formatTimestamp(item.requested_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>`;
+    }).join('') : `<tr><td colspan="6" class="muted">暂无待处理的组织申请</td></tr>`;
+    table.querySelectorAll('button[data-action]').forEach((button) => button.addEventListener('click', async () => {
+      try {
+        await API.reviewOrgMembershipAsDeveloper(button.dataset.id, button.dataset.action);
+        // 先刷新再写提示：loadOrgMembershipRequests() 开头会清空提示区
+        await loadOrgMembershipRequests();
+        status.textContent = button.dataset.action === 'approve' ? '申请已批准' : '申请已拒绝';
+      } catch (error) { status.textContent = briefError(error); }
+    }));
+  } catch (error) { table.innerHTML = `<tr><td colspan="6" class="muted">${escapeHtml(briefError(error))}</td></tr>`; }
+}
+
+function lobbyFields() {
+  return {
+    tool_rules: document.querySelector('#lobbyToolRules').value,
+    company_announcements: document.querySelector('#lobbyAnnouncements').value,
+    industry_standards: document.querySelector('#lobbyIndustryStandards').value,
+  };
+}
+
+function setLobbyEditing(editing) {
+  ['#lobbyToolRules', '#lobbyAnnouncements', '#lobbyIndustryStandards'].forEach((selector) => {
+    document.querySelector(selector).disabled = !editing;
+  });
+  document.querySelector('#editLobbyContent').classList.toggle('hidden', editing);
+  document.querySelector('#saveLobbyContent').classList.toggle('hidden', !editing);
+}
+
+async function loadLobbyContent() {
+  const status = document.querySelector('#lobbyContentStatus');
+  try {
+    const data = await API.developerLobbyContent();
+    document.querySelector('#lobbyToolRules').value = data.tool_rules || '';
+    document.querySelector('#lobbyAnnouncements').value = data.company_announcements || '';
+    document.querySelector('#lobbyIndustryStandards').value = data.industry_standards || '';
+    setLobbyEditing(false);
+    status.textContent = data.updated_at ? `最近更新：${formatTimestamp(data.updated_at)}` : '尚未设置大厅内容';
+  } catch (error) { status.textContent = briefError(error); }
+}
+
+async function saveLobbyContent() {
+  const status = document.querySelector('#lobbyContentStatus');
+  try {
+    await API.saveLobbyContent(lobbyFields());
+    setLobbyEditing(false);
+    status.textContent = '已保存，员工与审核员大厅立即可见';
+  } catch (error) { status.textContent = briefError(error); }
 }
 
 async function loadEnterprisePassword() {

@@ -159,25 +159,37 @@
     setPersonnelFlag: (id, flagged) => request(`/developer/users/${encodeURIComponent(id)}/flag`, { method: 'PATCH', body: JSON.stringify({ flagged }) }),
     savePersonnelNotes: (id, notes) => request(`/developer/users/${encodeURIComponent(id)}/notes`, { method: 'PATCH', body: JSON.stringify({ notes }) }),
     reviewerEnterprisePassword: () => request('/reviewer/enterprise-password', { method: 'GET' }),
+    organizationsDirectory: () => request('/organizations/directory', { method: 'GET' }),
+    lobbyContent: () => request('/organizations/lobby-content', { method: 'GET' }),
+    requestJoinOrganization: (id) => request(`/organizations/${encodeURIComponent(id)}/join-request`, { method: 'POST' }),
+    requestLeaveOrganization: (id) => request(`/organizations/${encodeURIComponent(id)}/leave-request`, { method: 'POST' }),
+    reviewerOrgMembershipRequests: () => request('/reviewer/org-membership-requests', { method: 'GET' }),
+    reviewOrgMembershipAsReviewer: (id, action) => request(`/reviewer/org-membership-requests/${encodeURIComponent(id)}/${action}`, { method: 'POST' }),
+    developerOrgMembershipRequests: () => request('/developer/org-membership-requests', { method: 'GET' }),
+    reviewOrgMembershipAsDeveloper: (id, action) => request(`/developer/org-membership-requests/${encodeURIComponent(id)}/${action}`, { method: 'POST' }),
+    developerLobbyContent: () => request('/developer/lobby-content', { method: 'GET' }),
+    saveLobbyContent: (payload) => request('/developer/lobby-content', { method: 'PUT', body: JSON.stringify(payload) }),
     forgotPassword: (username, enterprisePassword, verificationCode) => request('/auth/forgot-password', {
       method: 'POST', body: JSON.stringify({ username, enterprise_password: enterprisePassword, verification_code: verificationCode }), skipAuthRedirect: true,
     }),
     setUserActive: (id, active) => request(`/developer/users/${encodeURIComponent(id)}/${active ? 'enable' : 'disable'}`, { method: 'POST' }),
     changeUserRole: (id, targetRole) => request(`/developer/users/${encodeURIComponent(id)}/change_role`, { method: 'POST', body: JSON.stringify({ target_role: targetRole }) }),
     resetUserPassword: (id) => request(`/developer/users/${encodeURIComponent(id)}/reset_password`, { method: 'POST' }),
-    uploadDocument: (file) => {
+    uploadDocument: (file, organizationId) => {
       const formData = new FormData();
       formData.append('file', file);
+      // 归属组织必填：后端不做"只加入一个组织就自动推断"的默认逻辑
+      formData.append('organization_id', organizationId);
       return request('/documents/upload', {
         method: 'POST',
         body: formData,
         json: false,
       });
     },
-    inputKnowledge: (title, content) =>
+    inputKnowledge: (title, content, organizationId) =>
       request('/knowledge/input', {
         method: 'POST',
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, content, organization_id: organizationId }),
       }),
     listDocuments: () => request('/documents', { method: 'GET' }),
     listVerifiedDocuments: () => request('/documents/verified', { method: 'GET' }),

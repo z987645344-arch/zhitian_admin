@@ -14,11 +14,61 @@ function initReviewerPage() {
   document.querySelector('#debugQuery').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') runDebugRetrieve();
   });
+  document.querySelector('#refreshOrgRequests').addEventListener('click', loadOrgRequests);
+  document.querySelector('#refreshLobby').addEventListener('click', loadLobby);
   loadPending();
   loadDocuments();
   loadStats();
   loadEmployeeRequests();
   loadEnterprisePassword();
+  loadOrgRequests();
+  loadLobby();
+}
+
+function loadLobby() {
+  return OrgLobby.load({
+    lobbySelector: '#lobbyContent',
+    directorySelector: '#organizationDirectory',
+    messageSelector: '#lobbyMessage',
+    onChange: applyWorkGate,
+  });
+}
+
+// 未加入任何自定义组织时禁用文档审核入口；员工账号审批不受此门槛限制，
+// 那是账号是否存在的审批，与加入工作组织是两条独立链路。
+function applyWorkGate(joinedOrganizations) {
+  const hasOrganization = Array.isArray(joinedOrganizations) && joinedOrganizations.length > 0;
+  const notice = document.querySelector('#workGateNotice');
+  notice.textContent = hasOrganization ? '' : '你尚未加入任何组织，因此看不到任何待审核/已通过文档。请先在上方组织目录申请加入（员工账号审批不受影响）。';
+  notice.classList.toggle('hidden', hasOrganization);
+  // 两个文档列表都按组织过滤，未加入组织时整体置灰并由上方提示引导
+  ['#pendingReviewPanel', '#documentManagementPanel'].forEach((selector) => {
+    const panel = document.querySelector(selector);
+    if (panel) panel.classList.toggle('panel-locked', !hasOrganization);
+  });
+}
+
+async function loadOrgRequests() {
+  const table = document.querySelector('#orgRequestsTable');
+  const status = document.querySelector('#orgRequestStatus');
+  table.innerHTML = rowMessage('加载中...', 5);
+  status.textContent = '';
+  try {
+    const data = await API.reviewerOrgMembershipRequests();
+    const requests = Array.isArray(data.requests) ? data.requests : [];
+    table.innerHTML = requests.length ? requests.map((item) => `
+      <tr><td>${escapeHtml(item.username || '-')}</td><td>${escapeHtml(item.organization_name || '-')}</td><td>${item.action === 'join' ? '申请加入' : '申请退出'}</td><td>${escapeHtml(formatTimestamp(item.requested_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>
+    `).join('') : rowMessage('暂无待处理的组织申请', 5);
+    table.querySelectorAll('button[data-action]').forEach((button) => button.addEventListener('click', async () => {
+      try {
+        await API.reviewOrgMembershipAsReviewer(button.dataset.id, button.dataset.action);
+        // 先刷新再写提示：loadOrgRequests() 开头会清空提示区
+        await loadOrgRequests();
+        await loadLobby();
+        status.textContent = button.dataset.action === 'approve' ? '申请已批准' : '申请已拒绝';
+      } catch (error) { status.textContent = briefError(error); }
+    }));
+  } catch (error) { table.innerHTML = rowMessage(briefError(error), 5); }
 }
 
 async function loadEnterprisePassword() {

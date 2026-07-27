@@ -10,7 +10,66 @@ function initEmployeePage() {
   document.querySelector('#documentFile').addEventListener('change', showConversionHint);
   document.querySelector('#knowledgeForm').addEventListener('submit', inputKnowledge);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
+  document.querySelector('#refreshLobby').addEventListener('click', loadLobby);
+  loadLobby();
   loadDocuments();
+}
+
+function loadLobby() {
+  return OrgLobby.load({
+    lobbySelector: '#lobbyContent',
+    directorySelector: '#organizationDirectory',
+    messageSelector: '#lobbyMessage',
+    onChange: applyWorkGate,
+  });
+}
+
+// 工作资格门槛：未加入任何自定义组织时直接禁用提交入口，
+// 而不是让用户点击后才收到后端403。后端仍是唯一权威判断。
+function applyWorkGate(joinedOrganizations) {
+  const organizations = Array.isArray(joinedOrganizations) ? joinedOrganizations : [];
+  const hasOrganization = organizations.length > 0;
+  renderOrgTargets(organizations);
+  const notice = document.querySelector('#workGateNotice');
+  notice.textContent = hasOrganization ? '' : '请先在上方组织目录申请加入至少一个组织，加入后才能上传文档或录入知识。';
+  notice.classList.toggle('hidden', hasOrganization);
+  ['#uploadButton', '#documentFile', '#knowledgeButton', '#knowledgeTitle', '#knowledgeContent'].forEach((selector) => {
+    const element = document.querySelector(selector);
+    if (element) element.disabled = !hasOrganization;
+  });
+  ['#upload-section', '#entry-section'].forEach((selector) => {
+    const section = document.querySelector(selector);
+    if (section) section.classList.toggle('panel-locked', !hasOrganization);
+  });
+}
+
+// 上传目标组织：只加入一个时渲染为只读提示，多个时渲染下拉。
+// 无论哪种形态，请求都显式带上 organization_id——后端不做自动推断。
+function renderOrgTargets(organizations) {
+  ['#uploadOrgField', '#knowledgeOrgField'].forEach((selector) => {
+    const box = document.querySelector(selector);
+    if (!box) return;
+    const key = selector === '#uploadOrgField' ? 'upload' : 'knowledge';
+    if (!organizations.length) {
+      box.innerHTML = '';
+      return;
+    }
+    if (organizations.length === 1) {
+      const only = organizations[0];
+      box.innerHTML = `<p class="org-target-readonly">将上传至：<strong>${escapeHtml(only.name)}</strong></p>
+        <input type="hidden" id="${key}OrgId" value="${Number(only.id)}" />`;
+      return;
+    }
+    const options = organizations
+      .map((item) => `<option value="${Number(item.id)}">${escapeHtml(item.name)}</option>`)
+      .join('');
+    box.innerHTML = `<label class="org-target-select"><span>上传至组织</span><select id="${key}OrgId">${options}</select></label>`;
+  });
+}
+
+function selectedOrganizationId(key) {
+  const element = document.querySelector(`#${key}OrgId`);
+  return element ? Number(element.value) : null;
 }
 
 function showConversionHint(event) {
@@ -37,7 +96,7 @@ async function uploadDocument(event) {
   resultBox.classList.add('hidden');
 
   try {
-    const result = await API.uploadDocument(file);
+    const result = await API.uploadDocument(file, selectedOrganizationId('upload'));
     message.textContent = '文档已提交，等待审核员审核后生效';
     message.classList.add('success');
     resultBox.innerHTML = `
@@ -73,7 +132,7 @@ async function inputKnowledge(event) {
   resultBox.classList.add('hidden');
 
   try {
-    const result = await API.inputKnowledge(title, content);
+    const result = await API.inputKnowledge(title, content, selectedOrganizationId('knowledge'));
     message.textContent = '已提交，等待审核员审核后生效';
     message.classList.add('success');
     resultBox.innerHTML = `
