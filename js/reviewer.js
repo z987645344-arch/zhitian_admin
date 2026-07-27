@@ -310,12 +310,12 @@ function formatTimestamp(value) {
 
 async function loadPending() {
   const table = document.querySelector('#pendingTable');
-  table.innerHTML = rowMessage('加载中...', 5);
+  table.innerHTML = rowMessage('加载中...', 6);
   try {
     const data = await API.pendingDocuments();
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无待审核文档', 5);
+      table.innerHTML = rowMessage('暂无待审核文档', 6);
       return;
     }
     table.innerHTML = documents
@@ -327,6 +327,7 @@ async function loadPending() {
             ${item.converted_from ? `<div class="muted">转换来源：${escapeHtml(item.converted_from)}</div>` : ''}
           </td>
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
+          <td>${organizationLabel(item)}</td>
           <td>${escapeHtml(item.uploaded_at || '-')}</td>
           <td>
             <div class="actions">
@@ -342,7 +343,7 @@ async function loadPending() {
       button.addEventListener('click', () => handlePendingAction(button.dataset.action, button.dataset.docId));
     });
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 5);
+    table.innerHTML = rowMessage(briefError(error), 6);
   }
 }
 
@@ -408,12 +409,12 @@ async function reviewDocument(action, docId) {
 
 async function loadDocuments() {
   const table = document.querySelector('#documentsTable');
-  table.innerHTML = rowMessage('加载中...', 5);
+  table.innerHTML = rowMessage('加载中...', 6);
   try {
     const data = await API.listVerifiedDocuments();
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无已通过文档', 5);
+      table.innerHTML = rowMessage('暂无已通过文档', 6);
       return;
     }
     table.innerHTML = documents
@@ -425,6 +426,7 @@ async function loadDocuments() {
           </td>
           <td>${Number(item.chunk_count || 0)}</td>
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
+          <td>${organizationLabel(item)}</td>
           <td>${escapeHtml(item.reviewed_at || '-')}</td>
           <td><button class="danger" data-source="${escapeHtml(item.source || '')}">删除</button></td>
         </tr>
@@ -448,7 +450,7 @@ async function loadDocuments() {
       button.addEventListener('click', () => deleteDocument(button.dataset.source));
     });
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 5);
+    table.innerHTML = rowMessage(briefError(error), 6);
   }
 }
 
@@ -533,6 +535,13 @@ function statusBadge(status) {
 
 function shortId(value) {
   return value.length > 12 ? `${value.slice(0, 8)}...` : value;
+}
+
+// 组织列容错：当前设计下文档必有归属组织，但孤儿chunk兜底行等场景可能缺字段，
+// 统一渲染为"—"，避免单元格空白导致整行列错位。
+function organizationLabel(item) {
+  const name = (item && item.organization_name) || '';
+  return name ? escapeHtml(name) : '<span class="muted">—</span>';
 }
 
 function rowMessage(text, colspan) {

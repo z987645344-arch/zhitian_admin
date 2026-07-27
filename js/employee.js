@@ -154,12 +154,12 @@ async function inputKnowledge(event) {
 
 async function loadDocuments() {
   const table = document.querySelector('#documentsTable');
-  table.innerHTML = rowMessage('加载中...', 5);
+  table.innerHTML = rowMessage('加载中...', 6);
   try {
     const data = await API.listDocuments();
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无文档', 5);
+      table.innerHTML = rowMessage('暂无文档', 6);
       return;
     }
     table.innerHTML = documents
@@ -167,6 +167,7 @@ async function loadDocuments() {
         <tr>
           <td title="${escapeHtml(item.source || '')}">${escapeHtml(API.filename(item.source || ''))}</td>
           <td>${Number(item.chunk_count || 0)}</td>
+          <td>${organizationLabel(item)}</td>
           <td>${escapeHtml(item.uploaded_at || '-')}</td>
           <td>${statusBadge(item.trust_level || 'unknown')}</td>
           <td>${documentAction(item)}</td>
@@ -177,7 +178,7 @@ async function loadDocuments() {
       button.addEventListener('click', () => revokeDocument(button.dataset.source));
     });
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 5);
+    table.innerHTML = rowMessage(briefError(error), 6);
   }
 }
 
@@ -218,6 +219,12 @@ function statusClass(status) {
   if (status === 'pending') return 'badge-pending';
   if (status === 'rejected') return 'badge-rejected';
   return '';
+}
+
+// 组织列容错：缺字段时渲染"—"，避免空单元格导致列错位。
+function organizationLabel(item) {
+  const name = (item && item.organization_name) || '';
+  return name ? escapeHtml(name) : '<span class="muted">—</span>';
 }
 
 function rowMessage(text, colspan) {
