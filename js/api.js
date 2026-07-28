@@ -159,6 +159,8 @@
     setPersonnelFlag: (id, flagged) => request(`/developer/users/${encodeURIComponent(id)}/flag`, { method: 'PATCH', body: JSON.stringify({ flagged }) }),
     savePersonnelNotes: (id, notes) => request(`/developer/users/${encodeURIComponent(id)}/notes`, { method: 'PATCH', body: JSON.stringify({ notes }) }),
     reviewerEnterprisePassword: () => request('/reviewer/enterprise-password', { method: 'GET' }),
+    myDocumentsByOrganization: () => request('/employee/my-documents-by-organization', { method: 'GET' }),
+    reviewerDocumentsByOrganization: () => request('/reviewer/documents-by-organization', { method: 'GET' }),
     organizationsDirectory: () => request('/organizations/directory', { method: 'GET' }),
     lobbyContent: () => request('/organizations/lobby-content', { method: 'GET' }),
     requestJoinOrganization: (id) => request(`/organizations/${encodeURIComponent(id)}/join-request`, { method: 'POST' }),
@@ -197,7 +199,7 @@
     approveDocument: (docId) => request(`/approve/${encodeURIComponent(docId)}`, { method: 'POST' }),
     rejectDocument: (docId) => request(`/reject/${encodeURIComponent(docId)}`, { method: 'POST' }),
     previewDocument: (docId) => request(`/documents/${encodeURIComponent(docId)}/preview`, { method: 'GET' }),
-    deleteDocument: (source) => request(`/documents/${encodeURIComponent(source)}`, { method: 'DELETE' }),
+    deleteDocument: (docId) => request(`/documents/${docId}`, { method: 'DELETE' }),
     debugRetrieve: (query, topK = 5, includePending = false) =>
       request('/debug/retrieve', {
         method: 'POST',

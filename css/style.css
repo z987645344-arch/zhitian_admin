@@ -130,6 +130,10 @@ tbody tr:hover td { background: #fcfaf8; }
 /* 未加入任何自定义组织时的门槛提示与置灰区域 */
 .gate-notice { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--warning); border-radius: var(--radius); background: #fff8e8; color: var(--warning); font-size: 13px; }
 .panel-locked { opacity: .55; }
+/* 按组织统计文档数的小汇总 */
+.org-doc-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; font-size: 13px; }
+.org-doc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-low); color: var(--muted); }
+.org-doc-chip strong { color: var(--primary); font: 700 14px var(--font-title); }
 /* 上传目标组织：单组织为只读提示，多组织为下拉选择 */
 .org-target-field:empty { display: none; }
 .org-target-readonly { margin: 0 0 12px; padding: 9px 12px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--surface-low); color: var(--muted); font-size: 13px; }

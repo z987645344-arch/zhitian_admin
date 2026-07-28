@@ -23,6 +23,27 @@ function initReviewerPage() {
   loadEnterprisePassword();
   loadOrgRequests();
   loadLobby();
+  loadOrgDocSummary();
+}
+
+// 按组织统计已通过文档数；口径是组织范围内全部verified文档，
+// 不是"我个人批准过"的数量——项目不记录批准人归属。
+async function loadOrgDocSummary() {
+  const box = document.querySelector('#orgDocSummary');
+  if (!box) return;
+  box.innerHTML = '<span class="muted">统计加载中...</span>';
+  try {
+    const data = await API.reviewerDocumentsByOrganization();
+    const items = Array.isArray(data.organizations) ? data.organizations : [];
+    box.innerHTML = items.length
+      ? items.map((item) => `
+          <span class="org-doc-chip">${escapeHtml(item.organization_name || '—')}
+            <strong>${Number(item.document_count || 0)}</strong>
+          </span>`).join('')
+      : '<span class="muted">所属组织范围内暂无已通过文档</span>';
+  } catch (error) {
+    box.innerHTML = `<span class="muted">统计加载失败：${escapeHtml(briefError(error))}</span>`;
+  }
 }
 
 function loadLobby() {
@@ -398,6 +419,7 @@ async function reviewDocument(action, docId) {
     }
     await loadPending();
     await loadDocuments();
+    await loadOrgDocSummary();
     await loadStats();
     const panel = document.querySelector('#previewPanel');
     panel.classList.add('hidden');
@@ -428,7 +450,7 @@ async function loadDocuments() {
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
           <td>${organizationLabel(item)}</td>
           <td>${escapeHtml(item.reviewed_at || '-')}</td>
-          <td><button class="danger" data-source="${escapeHtml(item.source || '')}">删除</button></td>
+          <td><button class="danger" data-doc-id="${escapeHtml(item.doc_id || '')}" data-document-name="${escapeHtml(item.source || '')}">删除</button></td>
         </tr>
       `)
       .join('');
@@ -439,27 +461,31 @@ async function loadDocuments() {
       actionCell.innerHTML = `
         <div class="actions">
           <button class="secondary" data-doc-preview="${escapeHtml(item.doc_id || '')}">预览</button>
-          <button class="danger" data-source="${escapeHtml(item.source || '')}">删除</button>
+          <button class="danger" data-doc-id="${escapeHtml(item.doc_id || '')}" data-document-name="${escapeHtml(item.source || '')}">删除</button>
         </div>
       `;
     });
     table.querySelectorAll('button[data-doc-preview]').forEach((button) => {
       button.addEventListener('click', () => previewDocument(button.dataset.docPreview, '#documentPreviewPanel'));
     });
-    table.querySelectorAll('button[data-source]').forEach((button) => {
-      button.addEventListener('click', () => deleteDocument(button.dataset.source));
+    table.querySelectorAll('button[data-doc-id]').forEach((button) => {
+      button.addEventListener('click', () => deleteDocument(
+        button.dataset.docId,
+        button.dataset.documentName,
+      ));
     });
   } catch (error) {
     table.innerHTML = rowMessage(briefError(error), 6);
   }
 }
 
-async function deleteDocument(source) {
-  if (!source) return;
-  if (!confirm(`确认删除 ${API.filename(source)} 的全部chunk？`)) return;
+async function deleteDocument(docId, documentName) {
+  if (!docId) return;
+  if (!confirm(`确认删除 ${API.filename(documentName || '')} 的全部chunk？`)) return;
   try {
-    await API.deleteDocument(source);
+    await API.deleteDocument(docId);
     await loadDocuments();
+    await loadOrgDocSummary();
     await loadStats();
   } catch (error) {
     alert(briefError(error));

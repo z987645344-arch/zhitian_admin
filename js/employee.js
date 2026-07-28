@@ -9,10 +9,35 @@ function initEmployeePage() {
   document.querySelector('#uploadForm').addEventListener('submit', uploadDocument);
   document.querySelector('#documentFile').addEventListener('change', showConversionHint);
   document.querySelector('#knowledgeForm').addEventListener('submit', inputKnowledge);
-  document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
+  document.querySelector('#refreshDocuments').addEventListener('click', refreshDocumentViews);
   document.querySelector('#refreshLobby').addEventListener('click', loadLobby);
   loadLobby();
-  loadDocuments();
+  refreshDocumentViews();
+}
+
+// 文档列表与按组织统计始终一起刷新，避免上传/撤销后统计过期
+async function refreshDocumentViews() {
+  await loadDocuments();
+  await loadOrgDocSummary();
+}
+
+// 按组织统计"我上传的"文档数；加载失败只在本区域内提示，不影响页面其他部分
+async function loadOrgDocSummary() {
+  const box = document.querySelector('#orgDocSummary');
+  if (!box) return;
+  box.innerHTML = '<span class="muted">统计加载中...</span>';
+  try {
+    const data = await API.myDocumentsByOrganization();
+    const items = Array.isArray(data.organizations) ? data.organizations : [];
+    box.innerHTML = items.length
+      ? items.map((item) => `
+          <span class="org-doc-chip">${escapeHtml(item.organization_name || '—')}
+            <strong>${Number(item.document_count || 0)}</strong>
+          </span>`).join('')
+      : '<span class="muted">你还没有在任何组织上传过文档</span>';
+  } catch (error) {
+    box.innerHTML = `<span class="muted">统计加载失败：${escapeHtml(briefError(error))}</span>`;
+  }
 }
 
 function loadLobby() {
@@ -107,7 +132,7 @@ async function uploadDocument(event) {
     `;
     resultBox.classList.remove('hidden');
     input.value = '';
-    await loadDocuments();
+    await refreshDocumentViews();
   } catch (error) {
     message.textContent = briefError(error);
   } finally {
@@ -144,7 +169,7 @@ async function inputKnowledge(event) {
     resultBox.classList.remove('hidden');
     titleInput.value = '';
     contentInput.value = '';
-    await loadDocuments();
+    await refreshDocumentViews();
   } catch (error) {
     message.textContent = briefError(error);
   } finally {
@@ -174,21 +199,24 @@ async function loadDocuments() {
         </tr>
       `)
       .join('');
-    table.querySelectorAll('button[data-source]').forEach((button) => {
-      button.addEventListener('click', () => revokeDocument(button.dataset.source));
+    table.querySelectorAll('button[data-doc-id]').forEach((button) => {
+      button.addEventListener('click', () => revokeDocument(
+        button.dataset.docId,
+        button.dataset.documentName,
+      ));
     });
   } catch (error) {
     table.innerHTML = rowMessage(briefError(error), 6);
   }
 }
 
-async function revokeDocument(source) {
-  if (!source) return;
-  if (!confirm(`确认撤销 ${API.filename(source)}？`)) return;
+async function revokeDocument(docId, documentName) {
+  if (!docId) return;
+  if (!confirm(`确认撤销 ${API.filename(documentName || '')}？`)) return;
   try {
-    await API.deleteDocument(source);
+    await API.deleteDocument(docId);
     alert('已撤销，文档已从知识库移除');
-    await loadDocuments();
+    await refreshDocumentViews();
   } catch (error) {
     alert(briefError(error));
   }
@@ -196,7 +224,7 @@ async function revokeDocument(source) {
 
 function documentAction(item) {
   if (item.can_revoke) {
-    return `<button class="danger" data-source="${escapeHtml(item.source || '')}">撤销</button>`;
+    return `<button class="danger" data-doc-id="${escapeHtml(item.doc_id || '')}" data-document-name="${escapeHtml(item.source || '')}">撤销</button>`;
   }
   return `<span class="muted">${statusText(item.trust_level || 'unknown')}</span>`;
 }
