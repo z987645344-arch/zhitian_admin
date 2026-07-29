@@ -2,29 +2,30 @@
 <html lang="zh-CN">
   <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>申请企业账号 · 知天</title><link rel="stylesheet" href="./css/style.css" /></head>
   <body class="auth-page">
-    <main class="auth-shell"><section class="auth-card">
-      <div class="brand-mark login-brand" aria-hidden="true">知</div>
-      <div class="auth-heading login-heading"><p class="eyebrow">ENTERPRISE ACCESS</p><h1>申请企业角色</h1><p class="muted">提交后由对应权限人员审批，不会自动登录。</p></div>
+    <main class="auth-shell">
+    <section class="auth-intro" aria-label="申请说明"><div><div class="brand-mark" aria-hidden="true">知</div><h1>先验证身份，再申请职责。</h1><p>申请不会自动开通。员工由审核员确认，审核员和开发者由开发者确认。</p><div class="auth-assurances"><span>验证码仅发送到当前邮箱</span><span>密码不会明文保存</span><span>审批通过后才能登录</span></div></div><small>账号申请</small></section>
+    <div class="auth-form-area"><section class="auth-card">
+      <div class="auth-heading"><p class="eyebrow">账号申请</p><h1>申请企业账号</h1><p class="muted">请填写真实企业邮箱，并选择实际承担的职责。</p></div>
       <form id="requestAccessForm" class="form-stack">
-        <label><span>邮箱</span><input id="email" type="email" autocomplete="email" required /></label>
-        <label><span>密码</span><input id="password" type="password" autocomplete="new-password" required /><small class="field-hint">至少10位，需包含大小写字母和数字</small></label>
-        <label><span>确认密码</span><input id="confirmPassword" type="password" autocomplete="new-password" required /></label>
+        <label><span>企业邮箱</span><input id="email" type="email" autocomplete="email" placeholder="name@company.com" required /></label>
+        <label><span>设置密码</span><input id="password" type="password" autocomplete="new-password" placeholder="至少10位" required /><small class="field-hint">至少10位，同时包含大写字母、小写字母和数字；请勿使用其他网站的密码。</small></label>
+        <label><span>再次输入密码</span><input id="confirmPassword" type="password" autocomplete="new-password" placeholder="请再次输入" required /></label>
         <label>
-          <span>申请角色</span>
-          <div class="role-toggle" role="radiogroup" aria-label="申请角色">
+          <span>申请职责</span>
+          <div class="role-toggle" role="radiogroup" aria-label="申请职责">
             <button type="button" class="role-toggle-option active" data-role="employee" aria-pressed="true">员工</button>
             <button type="button" class="role-toggle-option" data-role="reviewer" aria-pressed="false">审核员</button>
             <button type="button" class="role-toggle-option" data-role="developer" aria-pressed="false">开发者</button>
           </div>
           <input type="hidden" id="requestedRole" value="employee" required />
         </label>
-        <label><span>企业密码</span><input id="enterprisePassword" type="password" required /><small class="field-hint">发送验证码前需先填写</small></label>
-        <label><span>邮箱验证码</span><div class="inline-actions"><input id="verificationCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required /><button id="sendCodeButton" type="button">发送验证码</button></div></label>
+        <label><span>企业准入密码</span><input id="enterprisePassword" type="password" autocomplete="off" placeholder="由企业管理员提供" required /><small class="field-hint">仅用于确认企业身份，发送验证码前必须填写。</small></label>
+        <label><span>邮箱验证码</span><div class="inline-actions"><input id="verificationCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6位验证码" required /><button id="sendCodeButton" type="button">获取验证码</button></div></label>
         <p id="message" class="message" aria-live="polite"></p>
-        <button id="submitButton" type="submit" class="btn-block">提交申请</button>
+        <button id="submitButton" type="submit" class="btn-block">确认并提交申请</button>
       </form>
-      <p class="auth-link"><a href="./login.html">返回登录</a></p>
-    </section></main>
+      <p class="auth-link"><a href="./login.html">已有账号，返回登录</a></p>
+    </section></div></main>
     <script src="./js/api.js"></script><script src="./js/request-access.js"></script>
   </body>
 </html>

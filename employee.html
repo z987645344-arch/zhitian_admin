@@ -9,13 +9,11 @@
   <body>
     <div class="app-layout">
       <aside class="sidebar">
-        <a class="brand" href="./employee.html"><span class="brand-symbol">知</span><span><strong>知天后台</strong><small>Knowledge Ops</small></span></a>
+        <a class="brand" href="./employee.html"><span class="brand-symbol">知</span><span><strong>员工工作台</strong><small>知识提交与跟踪</small></span></a>
         <nav class="side-nav" aria-label="员工工作台导航">
           <a class="active" href="#overview">工作台</a>
           <a href="#lobby-section">组织大厅</a>
-          <a href="#upload-section">上传文档</a>
-          <a href="#entry-section">文字录入</a>
-          <a href="#documents-section">我的文档</a>
+          <a href="#joined-organizations-section">已加入组织</a>
         </nav>
         <div class="sidebar-note"><span class="status-dot"></span><div><strong>审核流已启用</strong><small>提交内容经审核后生效</small></div></div>
         <div class="account-card"><div class="account-avatar">员</div><div><strong id="currentUser"></strong><small>知识贡献者</small></div></div>
@@ -24,57 +22,67 @@
 
       <main class="workspace">
         <header id="overview" class="workspace-header">
-          <div><p class="eyebrow">EMPLOYEE WORKSPACE</p><h1>员工工作台</h1><p class="muted">提交、整理并跟踪企业知识资产</p></div>
-          <span class="context-badge">审核后进入知识库</span>
+          <div><p class="eyebrow">我的工作区</p><h1>提交企业知识</h1><p class="muted">先进入所属组织，再上传资料、录入知识并查看审核状态。</p></div>
+          <span class="context-badge">内容审核后生效</span>
         </header>
 
         <section class="workflow-strip" aria-label="知识入库流程">
           <div><span>01</span><strong>提交资料</strong><small>文档上传或文字录入</small></div>
           <i></i><div><span>02</span><strong>审核确权</strong><small>审核员预览并确认</small></div>
-          <i></i><div><span>03</span><strong>检索生效</strong><small>进入 verified 知识库</small></div>
+          <i></i><div><span>03</span><strong>检索生效</strong><small>进入已审核知识库</small></div>
         </section>
 
         <section id="lobby-section" class="panel">
-          <div class="section-title"><div><p class="section-kicker">LOBBY</p><h2>组织大厅</h2></div><button id="refreshLobby" class="secondary">刷新</button></div>
+          <div class="section-title"><div><p class="section-kicker">公司公共信息</p><h2>组织大厅</h2></div><button id="refreshLobby" class="secondary">刷新内容</button></div>
           <p class="section-copy">「默认」大厅面向全体成员，无需申请；下方功能群需申请加入，加入后才能上传文档与录入知识。</p>
           <div id="lobbyContent" class="lobby-grid"></div>
-          <div class="section-title compact"><div><p class="section-kicker">DIRECTORY</p><h2>组织目录</h2></div></div>
+          <div class="section-title compact"><div><p class="section-kicker">加入与退出</p><h2>组织目录</h2></div></div>
           <p id="lobbyMessage" class="message" aria-live="polite"></p>
           <div id="organizationDirectory" class="org-grid"></div>
         </section>
 
-        <p id="workGateNotice" class="gate-notice hidden" role="status"></p>
+        <section id="joined-organizations-section" class="panel">
+          <div class="section-title"><div><p class="section-kicker">我的组织</p><h2>已加入组织</h2><p class="muted">选择一个组织，进入独立的提交与文档空间。</p></div><button id="refreshJoinedOrganizations" class="secondary">刷新列表</button></div>
+          <p id="workGateNotice" class="gate-notice hidden" role="status"></p>
+          <div id="employeeOrganizationListView">
+            <div id="employeeJoinedOrganizations" class="organization-work-grid"></div>
+          </div>
 
-        <div class="content-grid two-column">
-          <section id="upload-section" class="panel feature-panel">
-            <div class="section-title"><div><p class="section-kicker">DOCUMENT</p><h2>上传文档</h2></div><span class="format-label">最大 20MB</span></div>
-            <p class="section-copy">支持常用文档与 Office 格式；旧版 Office 文件将自动转换后解析。</p>
-            <div id="uploadOrgField" class="org-target-field"></div>
-            <form id="uploadForm" class="upload-zone">
-              <input id="documentFile" type="file" accept=".txt,.md,.pdf,.docx,.doc,.xls,.xlsx,.ppt,.pptx" required />
-              <button id="uploadButton" type="submit">上传并提交审核</button>
-            </form>
-            <p id="uploadMessage" class="message" aria-live="polite"></p>
-            <div id="uploadResult" class="result-box hidden"></div>
-          </section>
+          <div id="employeeOrganizationDetail" class="hidden">
+            <div class="organization-detail-header">
+              <button id="backToEmployeeOrganizations" class="secondary" type="button">← 返回组织列表</button>
+              <div><p class="section-kicker">当前组织</p><h2 id="employeeOrganizationTitle">组织详情</h2><p id="employeeOrganizationSummary" class="muted"></p></div>
+            </div>
 
-          <section id="entry-section" class="panel feature-panel">
-            <div class="section-title"><div><p class="section-kicker">MANUAL ENTRY</p><h2>直接录入文字</h2></div><span class="format-label">结构化知识</span></div>
-            <div id="knowledgeOrgField" class="org-target-field"></div>
-            <form id="knowledgeForm" class="form-stack compact-form">
-              <label><span>知识标题</span><input id="knowledgeTitle" placeholder="例如：售后流程说明" /></label>
-              <label><span>文字内容</span><textarea id="knowledgeContent" placeholder="输入需要进入知识库的内容" required></textarea></label>
-              <button id="knowledgeButton" type="submit">提交录入</button>
-            </form>
-            <p id="knowledgeMessage" class="message" aria-live="polite"></p>
-            <div id="knowledgeResult" class="result-box hidden"></div>
-          </section>
-        </div>
+            <div class="content-grid two-column">
+              <section id="upload-section" class="organization-detail-section feature-panel">
+                <div class="section-title"><div><p class="section-kicker">文件提交</p><h2>上传文档</h2></div><span class="format-label">单个文件不超过20MB</span></div>
+                <p class="section-copy">文件将直接归入当前组织；支持常用文档与 Office 格式。</p>
+                <form id="uploadForm" class="upload-zone">
+                  <input id="documentFile" type="file" accept=".txt,.md,.pdf,.docx,.doc,.xls,.xlsx,.ppt,.pptx" required />
+                  <button id="uploadButton" type="submit">上传并提交审核</button>
+                </form>
+                <p id="uploadMessage" class="message" aria-live="polite"></p>
+                <div id="uploadResult" class="result-box hidden"></div>
+              </section>
 
-        <section id="documents-section" class="panel table-panel">
-          <div class="section-title"><div><p class="section-kicker">MY DOCUMENTS</p><h2>已上传文档</h2></div><button id="refreshDocuments" class="secondary">刷新列表</button></div>
-          <div id="orgDocSummary" class="org-doc-summary" aria-label="按组织统计我上传的文档数"></div>
-          <div class="table-wrap"><table><thead><tr><th>文件名</th><th>CHUNK</th><th>组织</th><th>上传时间</th><th>审核状态</th><th>操作</th></tr></thead><tbody id="documentsTable"></tbody></table></div>
+              <section id="entry-section" class="organization-detail-section feature-panel">
+                <div class="section-title"><div><p class="section-kicker">文字提交</p><h2>直接录入文字</h2></div><span class="format-label">适合简短制度与说明</span></div>
+                <form id="knowledgeForm" class="form-stack compact-form">
+                  <label><span>知识标题</span><input id="knowledgeTitle" placeholder="例如：售后流程说明" /></label>
+                  <label><span>文字内容</span><textarea id="knowledgeContent" placeholder="输入需要进入知识库的内容" required></textarea></label>
+                  <button id="knowledgeButton" type="submit">提交录入</button>
+                </form>
+                <p id="knowledgeMessage" class="message" aria-live="polite"></p>
+                <div id="knowledgeResult" class="result-box hidden"></div>
+              </section>
+            </div>
+
+            <section id="documents-section" class="organization-detail-section table-panel">
+              <div class="section-title"><div><p class="section-kicker">提交记录</p><h2>我上传的文档</h2><p class="muted">只显示当前组织内由你提交的内容。</p></div><button id="refreshDocuments" class="secondary">刷新列表</button></div>
+              <div class="table-wrap"><table><thead><tr><th>文件名</th><th>内容片段</th><th>组织</th><th>提交时间</th><th>审核状态</th><th>可用操作</th></tr></thead><tbody id="documentsTable"></tbody></table></div>
+            </section>
+          </div>
         </section>
       </main>
     </div>

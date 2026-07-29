@@ -2,12 +2,17 @@ if (API.ensureRole(['reviewer'])) {
   initReviewerPage();
 }
 
+let reviewerJoinedOrganizations = [];
+let selectedReviewerOrganization = null;
+
 function initReviewerPage() {
   document.querySelector('#currentUser').textContent = `当前账号：${localStorage.getItem('username') || '-'}`;
   AccountSwitcher.mount();
   document.querySelector('#logoutButton').addEventListener('click', () => AccountSwitcher.handleLogout());
   document.querySelector('#refreshPending').addEventListener('click', loadPending);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
+  document.querySelector('#refreshJoinedOrganizations').addEventListener('click', loadJoinedOrganizations);
+  document.querySelector('#backToReviewerOrganizations').addEventListener('click', showReviewerOrganizationList);
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
   document.querySelector('#refreshEmployeeRequests').addEventListener('click', loadEmployeeRequests);
   document.querySelector('#runDebugRetrieve').addEventListener('click', runDebugRetrieve);
@@ -16,34 +21,106 @@ function initReviewerPage() {
   });
   document.querySelector('#refreshOrgRequests').addEventListener('click', loadOrgRequests);
   document.querySelector('#refreshLobby').addEventListener('click', loadLobby);
-  loadPending();
-  loadDocuments();
+  document.querySelector('#toggleEnterprisePassword').addEventListener('click', toggleEnterprisePassword);
   loadStats();
   loadEmployeeRequests();
   loadEnterprisePassword();
   loadOrgRequests();
   loadLobby();
-  loadOrgDocSummary();
 }
 
-// 按组织统计已通过文档数；口径是组织范围内全部verified文档，
-// 不是"我个人批准过"的数量——项目不记录批准人归属。
-async function loadOrgDocSummary() {
-  const box = document.querySelector('#orgDocSummary');
-  if (!box) return;
-  box.innerHTML = '<span class="muted">统计加载中...</span>';
+function toggleEnterprisePassword(event) {
+  const value = document.querySelector('#enterprisePasswordValue');
+  const concealed = value.classList.toggle('is-concealed');
+  event.currentTarget.textContent = concealed ? '显示密码' : '隐藏密码';
+  event.currentTarget.setAttribute('aria-pressed', String(!concealed));
+}
+
+// 组织卡片由目录、verified统计和当前审核范围内的pending列表合并生成。
+// pending只用于本地计数；进入详情后仍调用带organization_id的后端接口。
+async function loadJoinedOrganizations() {
+  const box = document.querySelector('#reviewerJoinedOrganizations');
+  box.innerHTML = '<p class="muted">组织加载中...</p>';
   try {
-    const data = await API.reviewerDocumentsByOrganization();
-    const items = Array.isArray(data.organizations) ? data.organizations : [];
-    box.innerHTML = items.length
-      ? items.map((item) => `
-          <span class="org-doc-chip">${escapeHtml(item.organization_name || '—')}
-            <strong>${Number(item.document_count || 0)}</strong>
-          </span>`).join('')
-      : '<span class="muted">所属组织范围内暂无已通过文档</span>';
+    const [directoryData, verifiedData, pendingData] = await Promise.all([
+      API.organizationsDirectory(),
+      API.reviewerDocumentsByOrganization(),
+      API.pendingDocuments(),
+    ]);
+    const directory = Array.isArray(directoryData.organizations)
+      ? directoryData.organizations.filter((item) => item.my_status === 'joined')
+      : [];
+    const verifiedCounts = new Map(
+      (verifiedData.organizations || []).map((item) => [
+        Number(item.organization_id),
+        Number(item.document_count || 0),
+      ]),
+    );
+    const pendingCounts = new Map();
+    (pendingData.documents || []).forEach((item) => {
+      const id = Number(item.organization_id);
+      pendingCounts.set(id, (pendingCounts.get(id) || 0) + 1);
+    });
+    reviewerJoinedOrganizations = directory.map((item) => ({
+      ...item,
+      pending_count: pendingCounts.get(Number(item.id)) || 0,
+      verified_count: verifiedCounts.get(Number(item.id)) || 0,
+    }));
+    renderReviewerOrganizations();
+    if (
+      selectedReviewerOrganization
+      && !reviewerJoinedOrganizations.some(
+        (item) => Number(item.id) === Number(selectedReviewerOrganization.id),
+      )
+    ) {
+      showReviewerOrganizationList();
+    }
   } catch (error) {
-    box.innerHTML = `<span class="muted">统计加载失败：${escapeHtml(briefError(error))}</span>`;
+    box.innerHTML = `<p class="muted">组织加载失败：${escapeHtml(briefError(error))}</p>`;
   }
+}
+
+function renderReviewerOrganizations() {
+  const box = document.querySelector('#reviewerJoinedOrganizations');
+  box.innerHTML = reviewerJoinedOrganizations.length
+    ? reviewerJoinedOrganizations.map((item) => `
+        <article class="organization-work-card">
+          <div><h3>${escapeHtml(item.name || '未命名组织')}</h3><p>${item.content ? escapeHtml(item.content) : '暂无组织简介'}</p></div>
+          <div class="organization-work-counts">
+            <span>待审核<strong>${Number(item.pending_count || 0)}</strong></span>
+            <span>已通过<strong>${Number(item.verified_count || 0)}</strong></span>
+          </div>
+          <button type="button" data-open-reviewer-org="${Number(item.id)}">进入组织</button>
+        </article>
+      `).join('')
+    : '<p class="muted">尚未加入任何组织，请先在组织大厅申请加入。</p>';
+  box.querySelectorAll('button[data-open-reviewer-org]').forEach((button) => {
+    button.addEventListener('click', () => openReviewerOrganization(button.dataset.openReviewerOrg));
+  });
+}
+
+async function openReviewerOrganization(organizationId) {
+  const organization = reviewerJoinedOrganizations.find(
+    (item) => Number(item.id) === Number(organizationId),
+  );
+  if (!organization) return;
+  selectedReviewerOrganization = organization;
+  document.querySelector('#reviewerOrganizationTitle').textContent = organization.name || '组织详情';
+  document.querySelector('#reviewerOrganizationSummary').textContent = organization.content || '暂无组织简介';
+  document.querySelector('#reviewerOrganizationListView').classList.add('hidden');
+  document.querySelector('#reviewerOrganizationDetail').classList.remove('hidden');
+  await Promise.all([loadPending(), loadDocuments()]);
+}
+
+function showReviewerOrganizationList() {
+  selectedReviewerOrganization = null;
+  document.querySelector('#reviewerOrganizationDetail').classList.add('hidden');
+  document.querySelector('#reviewerOrganizationListView').classList.remove('hidden');
+  ['#previewPanel', '#documentPreviewPanel'].forEach((selector) => {
+    const panel = document.querySelector(selector);
+    panel.classList.add('hidden');
+    panel.innerHTML = '';
+  });
 }
 
 function loadLobby() {
@@ -60,13 +137,9 @@ function loadLobby() {
 function applyWorkGate(joinedOrganizations) {
   const hasOrganization = Array.isArray(joinedOrganizations) && joinedOrganizations.length > 0;
   const notice = document.querySelector('#workGateNotice');
-  notice.textContent = hasOrganization ? '' : '你尚未加入任何组织，因此看不到任何待审核/已通过文档。请先在上方组织目录申请加入（员工账号审批不受影响）。';
+  notice.textContent = hasOrganization ? '' : '你尚未加入任何组织。请先在组织大厅申请加入（员工账号审批不受影响）。';
   notice.classList.toggle('hidden', hasOrganization);
-  // 两个文档列表都按组织过滤，未加入组织时整体置灰并由上方提示引导
-  ['#pendingReviewPanel', '#documentManagementPanel'].forEach((selector) => {
-    const panel = document.querySelector(selector);
-    if (panel) panel.classList.toggle('panel-locked', !hasOrganization);
-  });
+  loadJoinedOrganizations();
 }
 
 async function loadOrgRequests() {
@@ -331,9 +404,10 @@ function formatTimestamp(value) {
 
 async function loadPending() {
   const table = document.querySelector('#pendingTable');
+  if (!selectedReviewerOrganization) return;
   table.innerHTML = rowMessage('加载中...', 6);
   try {
-    const data = await API.pendingDocuments();
+    const data = await API.pendingDocuments(selectedReviewerOrganization.id);
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
       table.innerHTML = rowMessage('暂无待审核文档', 6);
@@ -419,7 +493,7 @@ async function reviewDocument(action, docId) {
     }
     await loadPending();
     await loadDocuments();
-    await loadOrgDocSummary();
+    await loadJoinedOrganizations();
     await loadStats();
     const panel = document.querySelector('#previewPanel');
     panel.classList.add('hidden');
@@ -431,9 +505,10 @@ async function reviewDocument(action, docId) {
 
 async function loadDocuments() {
   const table = document.querySelector('#documentsTable');
+  if (!selectedReviewerOrganization) return;
   table.innerHTML = rowMessage('加载中...', 6);
   try {
-    const data = await API.listVerifiedDocuments();
+    const data = await API.listVerifiedDocuments(selectedReviewerOrganization.id);
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
       table.innerHTML = rowMessage('暂无已通过文档', 6);
@@ -485,7 +560,7 @@ async function deleteDocument(docId, documentName) {
   try {
     await API.deleteDocument(docId);
     await loadDocuments();
-    await loadOrgDocSummary();
+    await loadJoinedOrganizations();
     await loadStats();
   } catch (error) {
     alert(briefError(error));
@@ -500,7 +575,7 @@ async function runDebugRetrieve() {
   const topK = Number(document.querySelector('#debugTopK').value || 5);
   const includePending = document.querySelector('#debugIncludePending').checked;
   if (!query) {
-    table.innerHTML = rowMessage('请输入query', 7);
+    table.innerHTML = rowMessage('请输入检索内容', 7);
     thresholdText.textContent = '';
     return;
   }
@@ -511,7 +586,7 @@ async function runDebugRetrieve() {
     const data = await API.debugRetrieve(query, topK, includePending);
     const threshold = Number(data.threshold || 0);
     const results = Array.isArray(data.results) ? data.results : [];
-    thresholdText.textContent = `当前采信阈值：score >= ${threshold.toFixed(3)}；本表展示完整候选，不做阈值过滤。`;
+    thresholdText.textContent = `当前采信阈值：最终分数不低于 ${threshold.toFixed(3)}；本表展示全部候选，不做阈值过滤。`;
     if (!results.length) {
       table.innerHTML = rowMessage('暂无候选结果', 7);
       return;
@@ -555,7 +630,7 @@ async function loadStats() {
 
 function statusBadge(status) {
   const safeStatus = status === 'pending' ? 'pending' : 'verified';
-  const label = safeStatus === 'pending' ? 'pending' : 'verified';
+  const label = safeStatus === 'pending' ? '待审核' : '已通过';
   return `<span class="status-badge status-${safeStatus}">${label}</span>`;
 }
 

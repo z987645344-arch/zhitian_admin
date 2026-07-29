@@ -8,38 +8,51 @@
   </head>
   <body class="auth-page">
     <main class="auth-shell">
-      <section class="auth-card">
-        <div class="brand-mark login-brand" aria-hidden="true">知</div>
-        <div class="auth-heading login-heading">
-          <p class="eyebrow">KNOWLEDGE OPERATIONS</p>
-          <h1>知天管理后台</h1>
-          <p class="muted">企业知识治理与运行诊断工作台</p>
+      <section class="auth-intro" aria-label="平台说明">
+        <div>
+          <div class="brand-mark" aria-hidden="true">知</div>
+          <h1>企业知识，按职责安全流转。</h1>
+          <p>员工提交、审核员确权、开发者维护。每个账号只进入与自身职责相符的工作区。</p>
+          <div class="auth-assurances"><span>身份失效后立即停止访问</span><span>文档按组织隔离</span><span>危险操作均需明确确认</span></div>
         </div>
-        <form id="loginForm" class="form-stack">
-          <label>
-            <span>用户名</span>
-            <input id="username" name="username" autocomplete="username" placeholder="请输入用户名" required />
-          </label>
-          <label>
-            <span>密码</span>
-            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required />
-          </label>
-          <label>
-            <span>账号类型</span>
-            <div class="role-toggle" role="radiogroup" aria-label="账号类型">
-              <button type="button" class="role-toggle-option active" data-role="employee" aria-pressed="true">员工</button>
-              <button type="button" class="role-toggle-option" data-role="reviewer" aria-pressed="false">审核员</button>
-              <button type="button" class="role-toggle-option" data-role="developer" aria-pressed="false">开发者</button>
-            </div>
-            <input type="hidden" id="role" name="role" value="employee" required />
-          </label>
-          <p id="message" class="message" aria-live="polite"></p>
-          <button id="loginButton" type="submit" class="btn-block">登录工作台</button>
-        </form>
-        <div class="auth-link auth-link-split"><a href="./request-access.html">申请企业角色账号</a><a href="./forgot-password.html">忘记密码</a></div>
-        <div class="role-note"><span>员工 · 知识提交</span><span>审核员 · 知识治理</span></div>
-        <p class="auth-footer">知天 Agent Platform · v2.1</p>
+        <small>知天企业管理平台</small>
       </section>
+      <div class="auth-form-area">
+        <section class="auth-card">
+          <div class="auth-heading">
+            <p class="eyebrow">安全登录</p>
+            <h1>进入管理工作台</h1>
+            <p class="muted">请选择账号职责，并使用对应账号登录。</p>
+          </div>
+          <form id="loginForm" class="form-stack">
+            <label>
+              <span>用户名或企业邮箱</span>
+              <input id="username" name="username" autocomplete="username" placeholder="请输入账号" required />
+            </label>
+            <label>
+              <span>密码</span>
+              <span class="password-field">
+                <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required />
+                <button id="togglePassword" type="button" aria-label="显示密码" aria-pressed="false">显示</button>
+              </span>
+            </label>
+            <label>
+              <span>账号职责</span>
+              <div class="role-toggle" role="radiogroup" aria-label="账号职责">
+                <button type="button" class="role-toggle-option active" data-role="employee" aria-pressed="true">员工</button>
+                <button type="button" class="role-toggle-option" data-role="reviewer" aria-pressed="false">审核员</button>
+                <button type="button" class="role-toggle-option" data-role="developer" aria-pressed="false">开发者</button>
+              </div>
+              <input type="hidden" id="role" name="role" value="employee" required />
+            </label>
+            <p id="message" class="message" aria-live="polite"></p>
+            <button id="loginButton" type="submit" class="btn-block">安全登录</button>
+          </form>
+          <div class="auth-link auth-link-split"><a href="./request-access.html">申请企业账号</a><a href="./forgot-password.html">找回密码</a></div>
+          <div class="role-note"><span>请勿共用账号</span><span>离开设备前请退出登录</span></div>
+          <p class="auth-footer">知天企业管理平台</p>
+        </section>
+      </div>
     </main>
     <script src="./js/api.js"></script>
     <script src="./js/login.js"></script>

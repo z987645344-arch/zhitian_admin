@@ -22,6 +22,7 @@ function initDeveloperPage() {
   document.querySelector('#logoutButton').addEventListener('click', () => AccountSwitcher.handleLogout());
   document.querySelector('#refreshRequests').addEventListener('click', loadRequests);
   document.querySelector('#refreshUsers').addEventListener('click', loadPersonnelOverview);
+  document.querySelector('#toggleEnterprisePassword').addEventListener('click', toggleEnterprisePassword);
   document.querySelector('#refreshEnterprisePassword').addEventListener('click', () => document.querySelector('#enterprisePasswordRefreshConfirm').showModal());
   document.querySelector('#cancelEnterprisePasswordRefresh').addEventListener('click', () => document.querySelector('#enterprisePasswordRefreshConfirm').close());
   document.querySelector('#confirmEnterprisePasswordRefresh').addEventListener('click', refreshEnterprisePassword);
@@ -39,6 +40,13 @@ function initDeveloperPage() {
   document.querySelector('#editLobbyContent').addEventListener('click', () => setLobbyEditing(true));
   document.querySelector('#saveLobbyContent').addEventListener('click', saveLobbyContent);
   Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadOrganizations(), loadOrgMembershipRequests(), loadLobbyContent(), loadModules(), loadMetrics()]).then(loadRequests);
+}
+
+function toggleEnterprisePassword(event) {
+  const value = document.querySelector('#enterprisePasswordValue');
+  const concealed = value.classList.toggle('is-concealed');
+  event.currentTarget.textContent = concealed ? '显示密码' : '隐藏密码';
+  event.currentTarget.setAttribute('aria-pressed', String(!concealed));
 }
 
 async function loadOrgMembershipRequests() {

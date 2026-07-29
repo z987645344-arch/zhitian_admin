@@ -7,64 +7,75 @@
   <body>
     <div class="app-layout">
       <aside class="sidebar">
-        <a class="brand" href="./reviewer.html"><span class="brand-symbol">知</span><span><strong>知天后台</strong><small>Review Console</small></span></a>
+        <a class="brand" href="./reviewer.html"><span class="brand-symbol">知</span><span><strong>审核工作台</strong><small>知识审核与治理</small></span></a>
         <nav class="side-nav" aria-label="审核工作台导航">
-          <a class="active" href="#employeeAccessPanel">员工账号审批</a><a href="#orgMembershipPanel">员工组织申请</a><a href="#lobbySection">组织大厅</a><a href="#pendingReviewPanel">待审核</a><a href="#documentManagementPanel">文档管理</a><a href="#retrieveDebugPanel">检索调试</a><a href="#memoryOverviewPanel">记忆总览</a>
+          <a class="active" href="#employeeAccessPanel">员工账号审批</a><a href="#orgMembershipPanel">员工组织申请</a><a href="#lobbySection">组织大厅</a><a href="#joinedOrganizationsPanel">已加入组织</a><a href="#retrieveDebugPanel">检索调试</a><a href="#memoryOverviewPanel">记忆总览</a>
         </nav>
-        <div class="sidebar-note"><span class="status-dot"></span><div><strong>知识治理在线</strong><small>仅 verified 内容参与检索</small></div></div>
+        <div class="sidebar-note"><span class="status-dot"></span><div><strong>知识治理在线</strong><small>仅已通过内容参与检索</small></div></div>
         <div class="account-card"><div class="account-avatar">审</div><div><strong id="currentUser"></strong><small>审核员</small></div></div>
         <button id="logoutButton" class="secondary sidebar-logout">退出登录</button>
       </aside>
 
       <main class="workspace">
-        <header class="workspace-header"><div><p class="eyebrow">REVIEW CONSOLE</p><h1>审核工作台</h1><p class="muted">确权企业知识，并验证检索质量与运行状态</p></div><span class="context-badge">Reviewer only</span></header>
+        <header class="workspace-header"><div><p class="eyebrow">审核员工作区</p><h1>审核企业知识</h1><p class="muted">按组织处理待审核内容，并维护已通过的知识资产。</p></div><span class="context-badge">仅审核员可访问</span></header>
 
-        <section id="enterprisePasswordPanel" class="panel"><div class="section-title"><div><p class="section-kicker">ENTERPRISE ACCESS</p><h2>当前企业密码</h2><p class="muted">每日凌晨4点自动刷新。</p></div></div><div class="enterprise-password-card stat-card"><strong id="enterprisePasswordValue">加载中...</strong><small id="enterprisePasswordRefresh">下次刷新：-</small></div></section>
+        <section id="enterprisePasswordPanel" class="panel"><div class="section-title"><div><p class="section-kicker">企业准入</p><h2>当前企业密码</h2><p class="muted">仅向已核实身份、需要申请企业账号的人员提供；每日凌晨 4 点自动刷新。</p></div></div><div class="enterprise-password-card stat-card"><strong id="enterprisePasswordValue" class="secret-value is-concealed">加载中...</strong><small id="enterprisePasswordRefresh">下次刷新：-</small><button id="toggleEnterprisePassword" class="secondary" type="button">显示密码</button></div></section>
 
         <section id="employeeAccessPanel" class="panel table-panel">
-          <div class="section-title"><div><p class="section-kicker">ACCESS REVIEW</p><h2>员工账号审批</h2><p class="muted">仅展示申请employee角色的待审批记录。</p></div><button id="refreshEmployeeRequests" class="secondary">刷新申请</button></div>
+          <div class="section-title"><div><p class="section-kicker">账号准入</p><h2>员工账号审批</h2><p class="muted">确认申请人身份后再批准；拒绝不会创建账号。</p></div><button id="refreshEmployeeRequests" class="secondary">刷新申请</button></div>
           <p id="employeeRequestStatus" class="message"></p>
           <div class="table-wrap"><table><thead><tr><th>邮箱</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="employeeRequestsTable"></tbody></table></div>
         </section>
 
         <section id="orgMembershipPanel" class="panel table-panel">
-          <div class="section-title"><div><p class="section-kicker">ORG REQUESTS</p><h2>员工组织申请</h2><p class="muted">仅展示本人所属组织内、由员工发起的加入/退出申请。</p></div><button id="refreshOrgRequests" class="secondary">刷新申请</button></div>
+          <div class="section-title"><div><p class="section-kicker">组织成员</p><h2>员工组织申请</h2><p class="muted">仅处理你所属组织内员工发起的加入或退出申请。</p></div><button id="refreshOrgRequests" class="secondary">刷新申请</button></div>
           <p id="orgRequestStatus" class="message"></p>
           <div class="table-wrap"><table><thead><tr><th>邮箱</th><th>组织</th><th>类型</th><th>申请时间</th><th>操作</th></tr></thead><tbody id="orgRequestsTable"></tbody></table></div>
         </section>
 
         <section id="lobbySection" class="panel">
-          <div class="section-title"><div><p class="section-kicker">LOBBY</p><h2>组织大厅</h2></div><button id="refreshLobby" class="secondary">刷新</button></div>
+          <div class="section-title"><div><p class="section-kicker">公司公共信息</p><h2>组织大厅</h2></div><button id="refreshLobby" class="secondary">刷新内容</button></div>
           <p class="section-copy">「默认」大厅面向全体成员，无需申请；加入至少一个功能群后才能执行文档审核。</p>
           <div id="lobbyContent" class="lobby-grid"></div>
-          <div class="section-title compact"><div><p class="section-kicker">DIRECTORY</p><h2>组织目录</h2></div></div>
+          <div class="section-title compact"><div><p class="section-kicker">加入与退出</p><h2>组织目录</h2></div></div>
           <p id="lobbyMessage" class="message" aria-live="polite"></p>
           <div id="organizationDirectory" class="org-grid"></div>
         </section>
 
-        <p id="workGateNotice" class="gate-notice hidden" role="status"></p>
+        <section id="joinedOrganizationsPanel" class="panel reviewer-work-panel">
+          <div class="section-title"><div><p class="section-kicker">我的组织</p><h2>已加入组织</h2><p class="muted">先选择组织，再处理该组织内的待审核与已通过内容。</p></div><button id="refreshJoinedOrganizations" class="secondary">刷新列表</button></div>
+          <p id="workGateNotice" class="gate-notice hidden" role="status"></p>
+          <div id="reviewerOrganizationListView">
+            <div id="reviewerJoinedOrganizations" class="organization-work-grid"></div>
+          </div>
+          <div id="reviewerOrganizationDetail" class="hidden">
+            <div class="organization-detail-header">
+              <button id="backToReviewerOrganizations" class="secondary" type="button">← 返回组织列表</button>
+              <div><p class="section-kicker">当前组织</p><h2 id="reviewerOrganizationTitle">组织详情</h2><p id="reviewerOrganizationSummary" class="muted"></p></div>
+            </div>
 
-        <section id="pendingReviewPanel" class="panel reviewer-work-panel table-panel">
-          <div class="section-title"><div><p class="section-kicker">REVIEW QUEUE</p><h2>待审核文档</h2><p class="muted">仅展示你所属组织范围内的文档。</p></div><button id="refreshPending" class="secondary">刷新队列</button></div>
-          <div class="table-wrap"><table><thead><tr><th>DOC ID</th><th>文件名</th><th>上传者</th><th>组织</th><th>上传时间</th><th>操作</th></tr></thead><tbody id="pendingTable"></tbody></table></div><div id="previewPanel" class="preview-panel hidden"></div>
-        </section>
+            <section id="pendingReviewPanel" class="organization-detail-section table-panel">
+              <div class="section-title"><div><p class="section-kicker">审核队列</p><h2>待审核文档</h2><p class="muted">批准前请先预览内容，并确认组织归属正确。</p></div><button id="refreshPending" class="secondary">刷新队列</button></div>
+              <div class="table-wrap"><table><thead><tr><th>文档编号</th><th>文件名</th><th>提交人</th><th>组织</th><th>提交时间</th><th>可用操作</th></tr></thead><tbody id="pendingTable"></tbody></table></div><div id="previewPanel" class="preview-panel hidden"></div>
+            </section>
 
-        <section id="documentManagementPanel" class="panel reviewer-work-panel table-panel">
-          <div class="section-title"><div><p class="section-kicker">VERIFIED LIBRARY</p><h2>文档管理</h2><p class="muted">仅展示你所属组织范围内的文档；客户端检索不受组织范围限制。</p></div><button id="refreshDocuments" class="secondary">刷新文档</button></div>
-          <div id="orgDocSummary" class="org-doc-summary" aria-label="按组织统计已通过文档数"></div>
-          <div class="table-wrap"><table><thead><tr><th>文件名</th><th>CHUNK</th><th>上传者</th><th>组织</th><th>审核时间</th><th>操作</th></tr></thead><tbody id="documentsTable"></tbody></table></div><div id="documentPreviewPanel" class="preview-panel hidden"></div>
+            <section id="documentManagementPanel" class="organization-detail-section table-panel">
+              <div class="section-title"><div><p class="section-kicker">知识资产</p><h2>已通过文档</h2><p class="muted">只显示当前组织的已通过内容；删除前请确认该内容已不再需要。</p></div><button id="refreshDocuments" class="secondary">刷新文档</button></div>
+              <div class="table-wrap"><table><thead><tr><th>文件名</th><th>内容片段</th><th>提交人</th><th>组织</th><th>审核时间</th><th>可用操作</th></tr></thead><tbody id="documentsTable"></tbody></table></div><div id="documentPreviewPanel" class="preview-panel hidden"></div>
+            </section>
+          </div>
         </section>
 
         <section id="retrieveDebugPanel" class="panel reviewer-work-panel">
-          <div class="section-title"><div><p class="section-kicker">RETRIEVAL LAB</p><h2>检索调试</h2></div><span class="format-label">不访问用户记忆</span></div>
-          <p class="section-copy">检查企业文档候选、分数与审核状态；默认仅查询 verified 内容。</p>
-          <div class="debug-form"><input id="debugQuery" type="text" placeholder="输入测试查询" /><input id="debugTopK" type="number" min="1" max="20" value="5" /><label class="debug-checkbox"><input id="debugIncludePending" type="checkbox" />包含待审核</label><button id="runDebugRetrieve">执行检索</button></div>
-          <p id="debugThreshold" class="muted"></p><div class="table-wrap"><table><thead><tr><th>SOURCE</th><th>DOC ID</th><th>状态</th><th>CHUNK</th><th>VECTOR分数</th><th>标题加分</th><th>SCORE</th></tr></thead><tbody id="debugRetrieveTable"></tbody></table></div>
+          <div class="section-title"><div><p class="section-kicker">检索检查</p><h2>检索调试</h2></div><span class="format-label">不会访问个人记忆</span></div>
+          <p class="section-copy">检查企业文档候选、分数与审核状态；默认仅查询已通过内容。</p>
+          <div class="debug-form"><input id="debugQuery" type="text" placeholder="输入需要验证的问题" /><input id="debugTopK" type="number" min="1" max="20" value="5" aria-label="候选数量" /><label class="debug-checkbox"><input id="debugIncludePending" type="checkbox" />同时检查待审核内容</label><button id="runDebugRetrieve">开始检查</button></div>
+          <p id="debugThreshold" class="muted"></p><div class="table-wrap"><table><thead><tr><th>来源文件</th><th>文档编号</th><th>审核状态</th><th>片段序号</th><th>向量分数</th><th>标题加分</th><th>最终分数</th></tr></thead><tbody id="debugRetrieveTable"></tbody></table></div>
         </section>
 
         <section id="memoryOverviewPanel" class="panel reviewer-work-panel">
-          <div class="section-title"><div><p class="section-kicker">MEMORY STATUS</p><h2>记忆总览</h2></div><button id="refreshStats" class="secondary">刷新状态</button></div>
-          <div class="stats-grid"><div class="stat-card"><span>向量库文档数量</span><strong id="vectorCount">-</strong><small>Chroma document chunks</small></div><div class="stat-card"><span>SQLite 对话记录</span><strong id="sqliteCount">-</strong><small>Persistent conversations</small></div></div>
+          <div class="section-title"><div><p class="section-kicker">存储状态</p><h2>记忆总览</h2></div><button id="refreshStats" class="secondary">刷新状态</button></div>
+          <div class="stats-grid"><div class="stat-card"><span>企业知识片段</span><strong id="vectorCount">-</strong><small>向量库中的文档片段数</small></div><div class="stat-card"><span>持久对话记录</span><strong id="sqliteCount">-</strong><small>本地数据库中保存的对话数</small></div></div>
         </section>
       </main>
     </div>

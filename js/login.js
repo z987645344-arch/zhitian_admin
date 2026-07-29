@@ -1,10 +1,19 @@
 const form = document.querySelector('#loginForm');
 const usernameInput = document.querySelector('#username');
 const passwordInput = document.querySelector('#password');
+const togglePassword = document.querySelector('#togglePassword');
 const roleInput = document.querySelector('#role');
 const roleToggleButtons = document.querySelectorAll('.role-toggle-option');
 const loginButton = document.querySelector('#loginButton');
 const message = document.querySelector('#message');
+
+togglePassword.addEventListener('click', () => {
+  const visible = passwordInput.type === 'text';
+  passwordInput.type = visible ? 'password' : 'text';
+  togglePassword.textContent = visible ? '显示' : '隐藏';
+  togglePassword.setAttribute('aria-label', visible ? '显示密码' : '隐藏密码');
+  togglePassword.setAttribute('aria-pressed', String(!visible));
+});
 
 const authNotice = sessionStorage.getItem('auth_notice');
 if (authNotice) {
@@ -63,7 +72,7 @@ form.addEventListener('submit', async (event) => {
 
 function setLoading(isLoading) {
   loginButton.disabled = isLoading;
-  loginButton.textContent = isLoading ? '登录中...' : '登录';
+  loginButton.textContent = isLoading ? '登录中...' : '安全登录';
 }
 
 function briefError(error) {

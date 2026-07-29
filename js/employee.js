@@ -2,6 +2,9 @@ if (API.ensureRole(['employee', 'reviewer'])) {
   initEmployeePage();
 }
 
+let employeeJoinedOrganizations = [];
+let selectedEmployeeOrganization = null;
+
 function initEmployeePage() {
   document.querySelector('#currentUser').textContent = `当前账号：${localStorage.getItem('username') || '-'}`;
   AccountSwitcher.mount();
@@ -10,34 +13,90 @@ function initEmployeePage() {
   document.querySelector('#documentFile').addEventListener('change', showConversionHint);
   document.querySelector('#knowledgeForm').addEventListener('submit', inputKnowledge);
   document.querySelector('#refreshDocuments').addEventListener('click', refreshDocumentViews);
+  document.querySelector('#refreshJoinedOrganizations').addEventListener('click', () => loadJoinedOrganizations());
+  document.querySelector('#backToEmployeeOrganizations').addEventListener('click', showEmployeeOrganizationList);
   document.querySelector('#refreshLobby').addEventListener('click', loadLobby);
   loadLobby();
-  refreshDocumentViews();
 }
 
-// 文档列表与按组织统计始终一起刷新，避免上传/撤销后统计过期
+// 当前组织的文档列表与组织卡片统计始终一起刷新，避免上传/撤销后计数过期。
 async function refreshDocumentViews() {
   await loadDocuments();
-  await loadOrgDocSummary();
+  await loadJoinedOrganizations();
 }
 
-// 按组织统计"我上传的"文档数；加载失败只在本区域内提示，不影响页面其他部分
-async function loadOrgDocSummary() {
-  const box = document.querySelector('#orgDocSummary');
-  if (!box) return;
-  box.innerHTML = '<span class="muted">统计加载中...</span>';
+async function loadJoinedOrganizations(joinedFromLobby = null) {
+  const box = document.querySelector('#employeeJoinedOrganizations');
+  box.innerHTML = '<p class="muted">组织加载中...</p>';
   try {
-    const data = await API.myDocumentsByOrganization();
-    const items = Array.isArray(data.organizations) ? data.organizations : [];
-    box.innerHTML = items.length
-      ? items.map((item) => `
-          <span class="org-doc-chip">${escapeHtml(item.organization_name || '—')}
-            <strong>${Number(item.document_count || 0)}</strong>
-          </span>`).join('')
-      : '<span class="muted">你还没有在任何组织上传过文档</span>';
+    const [directoryData, statsData] = await Promise.all([
+      joinedFromLobby
+        ? Promise.resolve({ organizations: joinedFromLobby })
+        : API.organizationsDirectory(),
+      API.myDocumentsByOrganization(),
+    ]);
+    const directory = Array.isArray(directoryData.organizations)
+      ? directoryData.organizations.filter((item) => item.my_status === 'joined')
+      : [];
+    const counts = new Map(
+      (statsData.organizations || []).map((item) => [
+        Number(item.organization_id),
+        Number(item.document_count || 0),
+      ]),
+    );
+    employeeJoinedOrganizations = directory.map((item) => ({
+      ...item,
+      document_count: counts.get(Number(item.id)) || 0,
+    }));
+    renderEmployeeOrganizations();
+    if (
+      selectedEmployeeOrganization
+      && !employeeJoinedOrganizations.some(
+        (item) => Number(item.id) === Number(selectedEmployeeOrganization.id),
+      )
+    ) {
+      showEmployeeOrganizationList();
+    }
   } catch (error) {
-    box.innerHTML = `<span class="muted">统计加载失败：${escapeHtml(briefError(error))}</span>`;
+    box.innerHTML = `<p class="muted">组织加载失败：${escapeHtml(briefError(error))}</p>`;
   }
+}
+
+function renderEmployeeOrganizations() {
+  const box = document.querySelector('#employeeJoinedOrganizations');
+  box.innerHTML = employeeJoinedOrganizations.length
+    ? employeeJoinedOrganizations.map((item) => `
+        <article class="organization-work-card">
+          <div><h3>${escapeHtml(item.name || '未命名组织')}</h3><p>${item.content ? escapeHtml(item.content) : '暂无组织简介'}</p></div>
+          <div class="organization-work-counts single">
+            <span>我上传的文档<strong>${Number(item.document_count || 0)}</strong></span>
+          </div>
+          <button type="button" data-open-employee-org="${Number(item.id)}">进入组织</button>
+        </article>
+      `).join('')
+    : '<p class="muted">尚未加入任何组织，请先在组织大厅申请加入。</p>';
+  box.querySelectorAll('button[data-open-employee-org]').forEach((button) => {
+    button.addEventListener('click', () => openEmployeeOrganization(button.dataset.openEmployeeOrg));
+  });
+}
+
+async function openEmployeeOrganization(organizationId) {
+  const organization = employeeJoinedOrganizations.find(
+    (item) => Number(item.id) === Number(organizationId),
+  );
+  if (!organization) return;
+  selectedEmployeeOrganization = organization;
+  document.querySelector('#employeeOrganizationTitle').textContent = organization.name || '组织详情';
+  document.querySelector('#employeeOrganizationSummary').textContent = organization.content || '暂无组织简介';
+  document.querySelector('#employeeOrganizationListView').classList.add('hidden');
+  document.querySelector('#employeeOrganizationDetail').classList.remove('hidden');
+  await loadDocuments();
+}
+
+function showEmployeeOrganizationList() {
+  selectedEmployeeOrganization = null;
+  document.querySelector('#employeeOrganizationDetail').classList.add('hidden');
+  document.querySelector('#employeeOrganizationListView').classList.remove('hidden');
 }
 
 function loadLobby() {
@@ -54,47 +113,10 @@ function loadLobby() {
 function applyWorkGate(joinedOrganizations) {
   const organizations = Array.isArray(joinedOrganizations) ? joinedOrganizations : [];
   const hasOrganization = organizations.length > 0;
-  renderOrgTargets(organizations);
   const notice = document.querySelector('#workGateNotice');
-  notice.textContent = hasOrganization ? '' : '请先在上方组织目录申请加入至少一个组织，加入后才能上传文档或录入知识。';
+  notice.textContent = hasOrganization ? '' : '请先在组织大厅申请加入至少一个组织，加入后才能上传文档或录入知识。';
   notice.classList.toggle('hidden', hasOrganization);
-  ['#uploadButton', '#documentFile', '#knowledgeButton', '#knowledgeTitle', '#knowledgeContent'].forEach((selector) => {
-    const element = document.querySelector(selector);
-    if (element) element.disabled = !hasOrganization;
-  });
-  ['#upload-section', '#entry-section'].forEach((selector) => {
-    const section = document.querySelector(selector);
-    if (section) section.classList.toggle('panel-locked', !hasOrganization);
-  });
-}
-
-// 上传目标组织：只加入一个时渲染为只读提示，多个时渲染下拉。
-// 无论哪种形态，请求都显式带上 organization_id——后端不做自动推断。
-function renderOrgTargets(organizations) {
-  ['#uploadOrgField', '#knowledgeOrgField'].forEach((selector) => {
-    const box = document.querySelector(selector);
-    if (!box) return;
-    const key = selector === '#uploadOrgField' ? 'upload' : 'knowledge';
-    if (!organizations.length) {
-      box.innerHTML = '';
-      return;
-    }
-    if (organizations.length === 1) {
-      const only = organizations[0];
-      box.innerHTML = `<p class="org-target-readonly">将上传至：<strong>${escapeHtml(only.name)}</strong></p>
-        <input type="hidden" id="${key}OrgId" value="${Number(only.id)}" />`;
-      return;
-    }
-    const options = organizations
-      .map((item) => `<option value="${Number(item.id)}">${escapeHtml(item.name)}</option>`)
-      .join('');
-    box.innerHTML = `<label class="org-target-select"><span>上传至组织</span><select id="${key}OrgId">${options}</select></label>`;
-  });
-}
-
-function selectedOrganizationId(key) {
-  const element = document.querySelector(`#${key}OrgId`);
-  return element ? Number(element.value) : null;
+  loadJoinedOrganizations(organizations);
 }
 
 function showConversionHint(event) {
@@ -113,7 +135,7 @@ async function uploadDocument(event) {
   const resultBox = document.querySelector('#uploadResult');
   const uploadButton = document.querySelector('#uploadButton');
   const file = input.files && input.files[0];
-  if (!file) return;
+  if (!file || !selectedEmployeeOrganization) return;
 
   uploadButton.disabled = true;
   showConversionHint({ target: input });
@@ -121,12 +143,12 @@ async function uploadDocument(event) {
   resultBox.classList.add('hidden');
 
   try {
-    const result = await API.uploadDocument(file, selectedOrganizationId('upload'));
+    const result = await API.uploadDocument(file, selectedEmployeeOrganization.id);
     message.textContent = '文档已提交，等待审核员审核后生效';
     message.classList.add('success');
     resultBox.innerHTML = `
-      <div>doc_id：<strong>${escapeHtml(result.doc_id || '-')}</strong></div>
-      <div>trust_level：<span class="badge">${escapeHtml(result.trust_level || '-')}</span></div>
+      <div>文档编号：<strong>${escapeHtml(result.doc_id || '-')}</strong></div>
+      <div>审核状态：<span class="badge">${statusText(result.trust_level || 'unknown')}</span></div>
       <div>source：${escapeHtml(result.source || '-')}</div>
       <div>chunks：${Number(result.chunks || 0)}</div>
     `;
@@ -149,7 +171,7 @@ async function inputKnowledge(event) {
   const button = document.querySelector('#knowledgeButton');
   const title = titleInput.value.trim();
   const content = contentInput.value.trim();
-  if (!content) return;
+  if (!content || !selectedEmployeeOrganization) return;
 
   button.disabled = true;
   message.textContent = '';
@@ -157,12 +179,12 @@ async function inputKnowledge(event) {
   resultBox.classList.add('hidden');
 
   try {
-    const result = await API.inputKnowledge(title, content, selectedOrganizationId('knowledge'));
+    const result = await API.inputKnowledge(title, content, selectedEmployeeOrganization.id);
     message.textContent = '已提交，等待审核员审核后生效';
     message.classList.add('success');
     resultBox.innerHTML = `
-      <div>doc_id：<strong>${escapeHtml(result.doc_id || '-')}</strong></div>
-      <div>trust_level：<span class="badge">${escapeHtml(result.trust_level || '-')}</span></div>
+      <div>文档编号：<strong>${escapeHtml(result.doc_id || '-')}</strong></div>
+      <div>审核状态：<span class="badge">${statusText(result.trust_level || 'unknown')}</span></div>
       <div>source：${escapeHtml(result.source || '-')}</div>
       <div>chunks：${Number(result.chunks || 0)}</div>
     `;
@@ -179,10 +201,15 @@ async function inputKnowledge(event) {
 
 async function loadDocuments() {
   const table = document.querySelector('#documentsTable');
+  if (!selectedEmployeeOrganization) return;
   table.innerHTML = rowMessage('加载中...', 6);
   try {
     const data = await API.listDocuments();
-    const documents = Array.isArray(data.documents) ? data.documents : [];
+    const documents = Array.isArray(data.documents)
+      ? data.documents.filter(
+        (item) => Number(item.organization_id) === Number(selectedEmployeeOrganization.id),
+      )
+      : [];
     if (!documents.length) {
       table.innerHTML = rowMessage('暂无文档', 6);
       return;

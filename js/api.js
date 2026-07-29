@@ -194,8 +194,14 @@
         body: JSON.stringify({ title, content, organization_id: organizationId }),
       }),
     listDocuments: () => request('/documents', { method: 'GET' }),
-    listVerifiedDocuments: () => request('/documents/verified', { method: 'GET' }),
-    pendingDocuments: () => request('/pending', { method: 'GET' }),
+    listVerifiedDocuments: (organizationId = null) => request(
+      `/documents/verified${organizationId === null ? '' : `?organization_id=${encodeURIComponent(organizationId)}`}`,
+      { method: 'GET' },
+    ),
+    pendingDocuments: (organizationId = null) => request(
+      `/pending${organizationId === null ? '' : `?organization_id=${encodeURIComponent(organizationId)}`}`,
+      { method: 'GET' },
+    ),
     approveDocument: (docId) => request(`/approve/${encodeURIComponent(docId)}`, { method: 'POST' }),
     rejectDocument: (docId) => request(`/reject/${encodeURIComponent(docId)}`, { method: 'POST' }),
     previewDocument: (docId) => request(`/documents/${encodeURIComponent(docId)}/preview`, { method: 'GET' }),
