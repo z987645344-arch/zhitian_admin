@@ -1,5 +1,10 @@
 ﻿const API = (() => {
-  const backendUrl = 'http://localhost:8000';
+  const configuredUrl = window.ZHITIAN_CONFIG?.apiBaseUrl;
+  const backendUrl = (
+    typeof configuredUrl === 'string' && configuredUrl.trim()
+      ? configuredUrl.trim()
+      : '/api'
+  ).replace(/\/+$/, '');
 
   function token() {
     return localStorage.getItem('auth_token') || '';

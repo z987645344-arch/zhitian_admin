@@ -457,6 +457,7 @@ tbody tr:hover td { background: #f8fafb; }
 .auth-assurances span { padding-top: 11px; border-top: 1px solid #cbd9df; }
 .auth-intro small { color: var(--muted); }
 .auth-form-area { display: grid; place-items: center; padding: 32px; }
+.auth-redirect-page { min-height: 100vh; }
 .auth-card {
   width: min(440px, 100%);
   padding: 34px;
@@ -480,6 +481,7 @@ tbody tr:hover td { background: #f8fafb; }
 .role-toggle-option.active { border-color: #b9ccd6; background: var(--primary-soft); color: var(--primary-hover); }
 .redirect-card { text-align: center; }
 .redirect-card .brand-mark { display: grid; margin: 0 auto 24px; }
+.clipboard-helper { position: fixed; opacity: 0; }
 .loading-line { height: 2px; margin-top: 26px; overflow: hidden; background: var(--surface-high); }
 .loading-line span { display: block; width: 35%; height: 100%; background: var(--primary); animation: load 1.2s infinite ease-in-out; }
 @keyframes load { from { transform: translateX(-110%); } to { transform: translateX(300%); } }

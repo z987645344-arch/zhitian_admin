@@ -396,8 +396,7 @@ async function copyTraceId(button) {
     } else {
       const textarea = document.createElement('textarea');
       textarea.value = value;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
+      textarea.className = 'clipboard-helper';
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand('copy');
