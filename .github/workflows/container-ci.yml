@@ -1,0 +1,165 @@
+name: Admin Container CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: zhitian-admin
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Read image tags
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "VERSION格式无效: $version" >&2
+            exit 1
+          fi
+          short_sha="${GITHUB_SHA:0:7}"
+          {
+            echo "version=$version"
+            echo "short_sha=$short_sha"
+            echo "version_tag=${IMAGE_NAME}:${version}"
+            echo "commit_tag=${IMAGE_NAME}:sha-${short_sha}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build version and commit tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-reports
+          docker buildx build \
+            --load \
+            --metadata-file ci-reports/build-metadata.json \
+            --tag "${{ steps.image.outputs.version_tag }}" \
+            --tag "${{ steps.image.outputs.commit_tag }}" \
+            .
+
+      - name: Record image digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          digest="$(jq -r '."containerimage.digest" // ."containerimage.config.digest" // empty' ci-reports/build-metadata.json)"
+          if [ -z "$digest" ]; then
+            digest="$(docker image inspect --format '{{.Id}}' '${{ steps.image.outputs.version_tag }}')"
+          fi
+          {
+            echo "version_tag=${{ steps.image.outputs.version_tag }}"
+            echo "commit_tag=${{ steps.image.outputs.commit_tag }}"
+            echo "digest=$digest"
+          } | tee ci-reports/image-digest.txt
+          {
+            echo "### 管理后台容器镜像"
+            echo
+            echo "- 版本标签：\`${{ steps.image.outputs.version_tag }}\`"
+            echo "- 提交标签：\`${{ steps.image.outputs.commit_tag }}\`"
+            echo "- Digest：\`$digest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --detach --name zhitian-admin-ci \
+            --publish 127.0.0.1:18080:8080 \
+            '${{ steps.image.outputs.version_tag }}'
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:18080/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs zhitian-admin-ci
+          exit 1
+
+      - name: Verify security headers and directory browsing
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="$(curl --fail --silent --show-error --head http://127.0.0.1:18080/)"
+          printf '%s\n' "$headers" | tee ci-reports/response-headers.txt
+          grep -Eiq '^Content-Security-Policy:' <<<"$headers"
+          grep -Eiq '^X-Content-Type-Options:[[:space:]]*nosniff' <<<"$headers"
+          grep -Eiq '^X-Frame-Options:[[:space:]]*DENY' <<<"$headers"
+          directory_status="$(curl --silent --output ci-reports/directory-response.txt \
+            --write-out '%{http_code}' http://127.0.0.1:18080/js/)"
+          if [ "$directory_status" != "403" ] && [ "$directory_status" != "404" ]; then
+            echo "/js/返回$directory_status，目录浏览未被可靠关闭" >&2
+            exit 1
+          fi
+          if grep -Fqi 'Index of /js' ci-reports/directory-response.txt; then
+            echo "检测到目录索引正文" >&2
+            exit 1
+          fi
+          echo "directory_status=$directory_status" | tee ci-reports/directory-check.txt
+
+      - name: Scan image and save full Trivy report
+        id: trivy_report
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.version_tag }}
+          scanners: vuln
+          format: json
+          output: ci-reports/trivy-image.json
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "0"
+
+      - name: Enforce high and critical image vulnerability policy
+        id: trivy_gate
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.version_tag }}
+          scanners: vuln
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+
+      - name: Stop container
+        if: always()
+        shell: bash
+        run: docker rm --force zhitian-admin-ci >/dev/null 2>&1 || true
+
+      - name: Upload build and security reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: admin-container-${{ steps.image.outputs.short_sha }}
+          path: ci-reports/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Apply vulnerability policy after reports
+        if: always()
+        shell: bash
+        run: |
+          failed=0
+          if [ '${{ steps.trivy_report.outcome }}' = 'failure' ]; then
+            echo "Trivy完整报告生成失败；不能把扫描工具故障当作通过。" >&2
+            failed=1
+          fi
+          if [ '${{ steps.trivy_gate.outcome }}' = 'failure' ]; then
+            echo "Trivy发现HIGH或CRITICAL镜像漏洞；报告已上传。" >&2
+            failed=1
+          fi
+          exit "$failed"

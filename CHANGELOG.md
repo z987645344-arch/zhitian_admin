@@ -1,6 +1,20 @@
 # 知天管理后台改动记录
 > Codex每次完成管理后台改动后必须追加到此文件
 
+## 2026-07-31 管理后台容器CI构建与安全扫描
+- 保留既有`.github/workflows/ci.yml`的全部JavaScript语法检查，不修改、不删除；新增独立`container-ci.yml`，在push/PR时真实构建现有Nginx生产Dockerfile，只在GitHub runner本地加载镜像，不登录或推送任何registry，也不需要任何真实Secret。
+- 新增根目录`VERSION=2.6.0`作为版本标签来源；每次同时生成`zhitian-admin:2.6.0`和`zhitian-admin:sha-<7位commit>`。Buildx把构建metadata和digest写入artifact及CI Summary，Trivy Action固定到官方`v0.36.0`不可变提交SHA，生成全等级JSON并对HIGH/CRITICAL执行门禁。
+- 容器启动后真实HTTP检查CSP、`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`；请求`/js/`只能返回403/404且正文不得出现目录索引。检查完成后无论成功失败都回收临时容器并上传报告。
+- 临时分支`codex-ci-phase-a-20260731`的真实push运行[30619785094](https://github.com/z987645344-arch/zhitian_admin/actions/runs/30619785094)全部通过：标签为`zhitian-admin:2.6.0`/`zhitian-admin:sha-b464b09`，digest=`sha256:631f166c6c4c4a674f7047eb475469263df4ae73a7fbbd3ce484976ecd015e75`；首页安全头逐项命中、`/js/`返回403，Trivy全等级报告为0项漏洞。该push只触发管理后台容器CI，没有任何镜像推送步骤。
+
+## 2026-07-31 Nginx生产容器与运行时API地址配置
+- 新增基于`nginx:stable-alpine`的静态站点镜像：选择stable-alpine以兼顾Nginx稳定分支与较小基础体积；站点监听非特权8080端口，worker和主进程均以镜像内`nginx`用户运行，运行时临时目录位于可写的`/tmp/nginx`。Docker构建上下文为158.32kB，镜像大小**26,096,171字节（约24.9MiB / 26.1MB）**，容器内`whoami=nginx`。
+- 新增`nginx.conf`：全站`autoindex off`，访问`/js/`真实返回403而不列目录；HTML与`config.js`均返回`Cache-Control: no-cache`，JS/CSS/图片/字体使用1小时缓存。所有响应增加严格同源CSP、`X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`及`Referrer-Policy`。
+- `js/api.js`移除写死的`http://localhost:8000`：优先读取`window.ZHITIAN_CONFIG.apiBaseUrl`，配置缺失或空值时兜底同源`/api`，并统一去除末尾斜杠。新增最先加载的`config.js`，生产默认设置`/api`；本地开发可显式改为`http://localhost:8000`，不需要修改业务API封装。
+- 为满足不含`unsafe-inline`/`unsafe-eval`的CSP，将`index.html`原内联跳转脚本迁移到`js/index.js`，两处JS动态内联样式改为复用CSS类；全部页面已在`api.js`之前加载`config.js`，未改变登录、组织下钻、上传、审核、预览、删除等DOM/API契约。
+- 真实构建/运行标签为`zhitian-admin:dev-production`。HTTP验证确认登录页和运行时配置不长期缓存、`js/api.js`为`max-age=3600`、安全响应头完整且目录浏览关闭。浏览器通过临时同源`/api`反向代理连接隔离后端：审核员登录后正确显示法律/财务两张卡片并进入法律的待审核/已通过详情；员工登录后同样显示双组织并进入法律的上传/文字录入/我的文档详情。浏览器控制台error/warn均为空，无CSP拦截。临时代理配置和测试数据不属于生产镜像，验证后已清理。
+- 管理后台全部JavaScript文件通过`node --check`；本轮只改部署和网络地址配置层，组织下钻及业务接口契约未变。
+
 ## 2026-07-29 参考图驱动的舒缓办公视觉系统
 - 以项目内统一界面参考图为准，将上一版纯黑白高对比方案调整为暖灰白背景、蓝灰主操作、鼠尾草绿通过态、柔和琥珀待审核态和克制砖红危险态；登录页、三角色工作台、组织卡片、统计卡片、表格、表单及弹窗继续共用同一套设计令牌。
 - 侧栏当前项由整块黑底改为浅蓝灰底、左侧色条和深色文字；组织工作卡片增加轻量色条与分色数量块，状态徽标继续同时保留文字和边框，不依赖颜色单独传意。现有DOM ID、JWT、组织下钻、上传、审核、预览、删除和治理接口契约均未改变。
