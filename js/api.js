@@ -223,6 +223,11 @@
       method: 'PUT',
       body: JSON.stringify(modules),
     }),
+    rateLimits: () => request('/developer/rate-limits', { method: 'GET' }),
+    saveRateLimits: (limits) => request('/developer/rate-limits', {
+      method: 'PUT',
+      body: JSON.stringify(limits),
+    }),
     listOrganizations: () => request('/developer/organizations', { method: 'GET' }),
     createOrganization: (name, content) => request('/developer/organizations', {
       method: 'POST',

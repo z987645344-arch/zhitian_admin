@@ -39,7 +39,8 @@ function initDeveloperPage() {
   document.querySelector('#refreshOrgMembership').addEventListener('click', loadOrgMembershipRequests);
   document.querySelector('#editLobbyContent').addEventListener('click', () => setLobbyEditing(true));
   document.querySelector('#saveLobbyContent').addEventListener('click', saveLobbyContent);
-  Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadOrganizations(), loadOrgMembershipRequests(), loadLobbyContent(), loadModules(), loadMetrics()]).then(loadRequests);
+  document.querySelector('#saveRateLimits').addEventListener('click', saveRateLimits);
+  Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadOrganizations(), loadOrgMembershipRequests(), loadLobbyContent(), loadModules(), loadRateLimits(), loadMetrics()]).then(loadRequests);
 }
 
 function toggleEnterprisePassword(event) {
@@ -271,6 +272,47 @@ async function saveNotes(userId, cell) {
   }
 }
 
+const RATE_LIMIT_ROLES = ['customer', 'employee', 'reviewer', 'developer'];
+function rateLimitInput(role) {
+  return document.querySelector(`#rateLimit${role.charAt(0).toUpperCase()}${role.slice(1)}`);
+}
+async function loadRateLimits() {
+  const status = document.querySelector('#rateLimitStatus');
+  try {
+    const data = await API.rateLimits();
+    (data.limits || []).forEach((item) => {
+      const input = rateLimitInput(item.role);
+      if (input) input.value = item.requests_per_minute;
+    });
+    document.querySelector('#rateLimitHint').textContent =
+      `取值范围 ${data.min_per_minute}–${data.max_per_minute} 次/分钟；四个角色需同时提交。`;
+    status.textContent = '限流配置已加载';
+  } catch (error) {
+    status.textContent = briefError(error);
+  }
+}
+async function saveRateLimits() {
+  const status = document.querySelector('#rateLimitStatus');
+  const payload = {};
+  for (const role of RATE_LIMIT_ROLES) {
+    const raw = Number(rateLimitInput(role).value);
+    if (!Number.isInteger(raw) || raw < 1) {
+      status.textContent = `${role} 的每分钟上限必须是不小于 1 的整数`;
+      return;
+    }
+    payload[role] = raw;
+  }
+  try {
+    const data = await API.saveRateLimits(payload);
+    (data.limits || []).forEach((item) => {
+      const input = rateLimitInput(item.role);
+      if (input) input.value = item.requests_per_minute;
+    });
+    status.textContent = '已保存，立即生效';
+  } catch (error) {
+    status.textContent = `保存失败：${briefError(error)}`;
+  }
+}
 function moduleValues() { return { tone: toneModule.value, forbidden: forbiddenModule.value }; }
 function setModuleEditing(editing) { [toneModule,forbiddenModule].forEach((item) => { item.disabled = !editing; }); editSystemModules.classList.toggle('hidden', editing); saveSystemModules.classList.toggle('hidden', !editing); }
 async function loadModules() { try { const data = await API.systemModules(); guidanceModule.value=data.guidance?.content||''; toneModule.value=data.tone?.content||''; forbiddenModule.value=data.forbidden?.content||''; window.savedModules=moduleValues(); setModuleEditing(false); systemModulesStatus.textContent='模块已加载'; } catch(error) { systemModulesStatus.textContent=briefError(error); } }
