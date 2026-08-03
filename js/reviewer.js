@@ -11,6 +11,7 @@ function initReviewerPage() {
   document.querySelector('#logoutButton').addEventListener('click', () => AccountSwitcher.handleLogout());
   document.querySelector('#refreshPending').addEventListener('click', loadPending);
   document.querySelector('#refreshDocuments').addEventListener('click', loadDocuments);
+  document.querySelector('#usageMonthSelect').addEventListener('change', applyUsageMonth);
   document.querySelector('#refreshJoinedOrganizations').addEventListener('click', loadJoinedOrganizations);
   document.querySelector('#backToReviewerOrganizations').addEventListener('click', showReviewerOrganizationList);
   document.querySelector('#refreshStats').addEventListener('click', loadStats);
@@ -503,17 +504,65 @@ async function reviewDocument(action, docId) {
   }
 }
 
+// 已选的统计月份；空串表示累计总量。切换时只重算调用量列，不重新拉取文档列表。
+let selectedUsageMonth = '';
+
+function usageCellMarkup(item) {
+  return `<strong>${Number(item.total_hit_count || 0)}</strong> / <strong>${Number(item.total_cited_count || 0)}</strong>`;
+}
+
+async function applyUsageMonth() {
+  const select = document.querySelector('#usageMonthSelect');
+  const hint = document.querySelector('#usageScopeHint');
+  selectedUsageMonth = select ? select.value : '';
+  const cells = document.querySelectorAll('td[data-usage-doc-id]');
+  if (!selectedUsageMonth) {
+    hint.textContent = '当前显示累计总量';
+    cells.forEach((cell) => { cell.innerHTML = cell.dataset.usageTotal; });
+    return;
+  }
+  hint.textContent = `正在加载 ${selectedUsageMonth} ...`;
+  await Promise.all(Array.from(cells).map(async (cell) => {
+    try {
+      const usage = await API.documentUsage(cell.dataset.usageDocId, selectedUsageMonth);
+      const month = usage.selected_month || { hit_count: 0, cited_count: 0 };
+      cell.innerHTML = `<strong>${Number(month.hit_count || 0)}</strong> / <strong>${Number(month.cited_count || 0)}</strong>`;
+    } catch (error) {
+      cell.innerHTML = '<span class="muted">-</span>';
+    }
+  }));
+  hint.textContent = `当前显示 ${selectedUsageMonth} 单月数据`;
+}
+
+function refreshUsageMonthOptions(documents) {
+  const select = document.querySelector('#usageMonthSelect');
+  if (!select) return;
+  // 月份选项由最近12个月生成，避免为了列选项再跑一次聚合查询
+  const months = [];
+  const cursor = new Date();
+  for (let i = 0; i < 12; i += 1) {
+    months.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`);
+    cursor.setMonth(cursor.getMonth() - 1);
+  }
+  const previous = select.value;
+  select.innerHTML = ['<option value="">累计总量</option>']
+    .concat(months.map((month) => `<option value="${month}">${month}</option>`))
+    .join('');
+  select.value = months.includes(previous) ? previous : '';
+}
+
 async function loadDocuments() {
   const table = document.querySelector('#documentsTable');
   if (!selectedReviewerOrganization) return;
-  table.innerHTML = rowMessage('加载中...', 6);
+  table.innerHTML = rowMessage('加载中...', 7);
   try {
     const data = await API.listVerifiedDocuments(selectedReviewerOrganization.id);
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无已通过文档', 6);
+      table.innerHTML = rowMessage('暂无已通过文档', 7);
       return;
     }
+    refreshUsageMonthOptions(documents);
     table.innerHTML = documents
       .map((item) => `
         <tr>
@@ -525,10 +574,12 @@ async function loadDocuments() {
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
           <td>${organizationLabel(item)}</td>
           <td>${escapeHtml(item.reviewed_at || '-')}</td>
+          <td data-usage-doc-id="${escapeHtml(item.doc_id || '')}" data-usage-total="${escapeHtml(usageCellMarkup(item))}">${usageCellMarkup(item)}</td>
           <td><button class="danger" data-doc-id="${escapeHtml(item.doc_id || '')}" data-document-name="${escapeHtml(item.source || '')}">删除</button></td>
         </tr>
       `)
       .join('');
+    if (selectedUsageMonth) await applyUsageMonth();
     table.querySelectorAll('tr').forEach((row, index) => {
       const item = documents[index] || {};
       const actionCell = row.querySelector('td:last-child');
@@ -550,7 +601,7 @@ async function loadDocuments() {
       ));
     });
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 6);
+    table.innerHTML = rowMessage(briefError(error), 7);
   }
 }
 

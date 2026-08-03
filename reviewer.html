@@ -61,7 +61,7 @@
 
             <section id="documentManagementPanel" class="organization-detail-section table-panel">
               <div class="section-title"><div><p class="section-kicker">知识资产</p><h2>已通过文档</h2><p class="muted">只显示当前组织的已通过内容；删除前请确认该内容已不再需要。</p></div><button id="refreshDocuments" class="secondary">刷新文档</button></div>
-              <div class="table-wrap"><table><thead><tr><th>文件名</th><th>内容片段</th><th>提交人</th><th>组织</th><th>审核时间</th><th>可用操作</th></tr></thead><tbody id="documentsTable"></tbody></table></div><div id="documentPreviewPanel" class="preview-panel hidden"></div>
+              <div class="table-wrap"><table><thead><tr><th>文件名</th><th>内容片段</th><th>提交人</th><th>组织</th><th>审核时间</th><th>命中 / 引用<br><small class="muted">命中＝被检索召回；引用＝真正出现在回答来源</small></th><th>可用操作</th></tr></thead><tbody id="documentsTable"></tbody></table></div><div class="inline-form"><label for="usageMonthSelect">调用量统计范围</label><select id="usageMonthSelect"><option value="">累计总量</option></select><span id="usageScopeHint" class="muted">当前显示累计总量</span></div><div id="documentPreviewPanel" class="preview-panel hidden"></div>
             </section>
           </div>
         </section>

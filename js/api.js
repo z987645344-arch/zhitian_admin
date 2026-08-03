@@ -210,6 +210,10 @@
     approveDocument: (docId) => request(`/approve/${encodeURIComponent(docId)}`, { method: 'POST' }),
     rejectDocument: (docId) => request(`/reject/${encodeURIComponent(docId)}`, { method: 'POST' }),
     previewDocument: (docId) => request(`/documents/${encodeURIComponent(docId)}/preview`, { method: 'GET' }),
+    documentUsage: (docId, yearMonth = null) => request(
+      `/documents/${encodeURIComponent(docId)}/usage${yearMonth ? `?year_month=${encodeURIComponent(yearMonth)}` : ''}`,
+      { method: 'GET' },
+    ),
     deleteDocument: (docId) => request(`/documents/${docId}`, { method: 'DELETE' }),
     debugRetrieve: (query, topK = 5, includePending = false) =>
       request('/debug/retrieve', {
