@@ -119,12 +119,32 @@ function applyWorkGate(joinedOrganizations) {
   loadJoinedOrganizations(organizations);
 }
 
+// F36：与后端config.MAX_UPLOAD_SIZE_MB保持一致，改动时需同步。
+// 下调到2MB的依据是实测的向量化速度（约61切片/秒），使处理时长与等待预期相称。
+const MAX_UPLOAD_MB = 2;
+
+function formatSize(bytes) {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)}MB`
+    : `${Math.max(1, Math.round(bytes / 1024))}KB`;
+}
+
 function showConversionHint(event) {
   const file = event.target.files && event.target.files[0];
   const message = document.querySelector('#uploadMessage');
   const extension = file && file.name.includes('.') ? `.${file.name.split('.').pop().toLowerCase()}` : '';
   const convertible = new Set(['.doc', '.xls', '.xlsx', '.ppt', '.pptx']);
-  message.textContent = convertible.has(extension) ? '该格式将自动转换后上传' : '';
+  const hints = [];
+  if (file && file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    // 前端提前拦住，不让请求发出去才被后端拒绝
+    message.textContent = `文件 ${formatSize(file.size)}，超出 ${MAX_UPLOAD_MB}MB 上限，请拆分后再上传`;
+    message.classList.remove('success');
+    return;
+  }
+  if (convertible.has(extension)) hints.push('该格式将自动转换后上传');
+  // 入库需要为全文生成向量，体积越大越慢；这里给一个量级提示而非精确预测
+  if (file && file.size > 512 * 1024) hints.push('文件较大，入库可能需要 1 分钟以上，请勿关闭页面');
+  message.textContent = hints.join('；');
   message.classList.remove('success');
 }
 
@@ -136,6 +156,12 @@ async function uploadDocument(event) {
   const uploadButton = document.querySelector('#uploadButton');
   const file = input.files && input.files[0];
   if (!file || !selectedEmployeeOrganization) return;
+  // 提交前再拦一次：避免选文件后才超限、或未触发change事件的情况
+  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    message.textContent = `文件 ${formatSize(file.size)}，超出 ${MAX_UPLOAD_MB}MB 上限，请拆分后再上传`;
+    message.classList.remove('success');
+    return;
+  }
 
   uploadButton.disabled = true;
   showConversionHint({ target: input });
