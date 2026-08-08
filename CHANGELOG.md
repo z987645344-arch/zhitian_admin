@@ -1,6 +1,21 @@
 # 知天管理后台改动记录
 > Codex每次完成管理后台改动后必须追加到此文件
 
+## 2026-08-08 补齐F37跨仓库同步缺口：上传体积提示2MB→1MB
+- 合并遗留分支`f37-embedding-upgrade-verify`（唯一提交`2f2a853`），将`js/employee.js`的`MAX_UPLOAD_MB`由2改为1，`employee.html`两处文案同步为"不超过1MB"。前端只做体积预筛，服务端另有切片数上限（2000）作为更精确的控制。
+- **修复的是一处真实的线上不一致**：后端F37（换用`bge-small-zh-v1.5`中文嵌入模型，向量化由约61切片/秒降到约21，`MAX_UPLOAD_SIZE_MB`由2下调为1）早已合并master并完成生产迁移，但管理后台这一半始终留在隔离分支上未合并，导致**前端提示2MB、后端实际只收1MB**——用户上传1.5MB文件会通过前端预筛、再被后端拒掉。
+- 缺口成因是F37批次的跨仓库同步遗漏（非F36）：F36是把上限降到2MB的那一批（`5fc56fc`），F37在其基础上再降到1MB，后端半边合了、管理后台半边没合。合并后已核对前端`MAX_UPLOAD_MB=1`与后端`config.MAX_UPLOAD_SIZE_MB`默认值1一致。
+- 采用`--no-ff`合并而非squash：待合并只有一个提交，squash无历史可清理，反而会丢掉原提交自带的量化依据与作者日期；合并提交则记录了该改动当初挂在隔离分支上的来龙去脉。合并自动完成无冲突（分支改动集中在第120行区与`employee.html`，master的F36异步改动在第152行以后与`js/api.js`，区域不重叠），改动量2文件5增4删，与合并前的三点差异完全一致。
+- 验证：合并后确认F36异步改动未被回退（`streamTaskProgress`在`js/api.js`与`js/employee.js`均在、`trackIngestProgress`在第154行）；全量JS通过`node --check`。该分支已合入远程master，本地分支以`git branch -d`安全删除（远程从未存在同名分支）。
+
+## 2026-08-08 上传/知识录入接入异步任务进度SSE推送
+- 适配后端F36异步化改造：上传后不再等待完整响应，改为拿`task_id`后连接SSE进度端点，展示进度百分比，done后展示成功、failed后展示错误信息。
+- `js/api.js`新增`streamTaskProgress`：EventSource不支持自定义请求头、带不了Bearer token，因此与web_client的`chatStream`一样用fetch流式读取，并跳过以冒号开头的SSE心跳注释帧。
+- `js/employee.js`抽出`trackIngestProgress`供上传与知识录入共用，避免两处各写一份进度处理；后端未返回`task_id`时回落到同步提示，不因此卡住界面。
+- 对应后端契约变更：`/documents/upload`与`/knowledge/input`响应`status`字段由`success`改为`accepted`。
+- 修正开发过程中引入的变量名引用错误：`inputKnowledge`函数内错传`knowledgeMessage`/`knowledgeResult`，实际应为`message`/`resultBox`，运行时会ReferenceError。**`node --check`只做语法检查，抓不到这类未定义引用**，是人工逐段核对改动时发现的。
+- 本条为补记：对应提交`df33bfc`当时已推送但漏了本文件，与`5fc56fc`（F36上限提示改2MB并在请求前拦截）同属未及时登记的改动。
+
 ## 2026-07-31 管理后台容器CI构建与安全扫描
 - 保留既有`.github/workflows/ci.yml`的全部JavaScript语法检查，不修改、不删除；新增独立`container-ci.yml`，在push/PR时真实构建现有Nginx生产Dockerfile，只在GitHub runner本地加载镜像，不登录或推送任何registry，也不需要任何真实Secret。
 - 新增根目录`VERSION=2.6.0`作为版本标签来源；每次同时生成`zhitian-admin:2.6.0`和`zhitian-admin:sha-<7位commit>`。Buildx把构建metadata和digest写入artifact及CI Summary，Trivy Action固定到官方`v0.36.0`不可变提交SHA，生成全等级JSON并对HIGH/CRITICAL执行门禁。
