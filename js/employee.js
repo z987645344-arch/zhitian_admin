@@ -148,6 +148,55 @@ function showConversionHint(event) {
   message.classList.remove('success');
 }
 
+// F36异步化：统一的入库进度跟踪。后端返回status=accepted与task_id后，
+// 连SSE逐帧拿进度；done/failed/interrupted时结束并给出终态提示。
+async function trackIngestProgress(result, messageEl, resultBox) {
+  if (!result || !result.task_id) {
+    // 兼容后端返回同步结果的情况，不因缺task_id而卡住界面
+    messageEl.textContent = '已提交，等待审核员审核后生效';
+    messageEl.classList.add('success');
+    return { status: 'done' };
+  }
+  messageEl.classList.remove('success');
+  messageEl.textContent = '已接收，正在建立索引…';
+  resultBox.innerHTML = '<div>入库进度：<strong id="ingestPercent">0%</strong></div>';
+  resultBox.classList.remove('hidden');
+  const percentEl = resultBox.querySelector('#ingestPercent');
+
+  let finalState = null;
+  try {
+    finalState = await API.streamTaskProgress(result.task_id, (state) => {
+      if (percentEl) percentEl.textContent = `${Number(state.progress || 0)}%`;
+      if (state.status === 'processing') {
+        messageEl.textContent = `正在建立索引…（${Number(state.processed_chunks || 0)}/${Number(state.total_chunks || 0)} 片段）`;
+      }
+    });
+  } catch (error) {
+    messageEl.textContent = `进度连接中断：${briefError(error)}；可刷新列表确认是否已入库`;
+    return null;
+  }
+
+  const status = finalState && finalState.status;
+  if (status === 'done') {
+    messageEl.textContent = '文档已提交，等待审核员审核后生效';
+    messageEl.classList.add('success');
+    resultBox.innerHTML = `
+      <div>文档编号：<strong>${escapeHtml(finalState.doc_id || result.doc_id || '-')}</strong></div>
+      <div>审核状态：<span class="badge">${statusText(result.trust_level || 'unknown')}</span></div>
+      <div>source：${escapeHtml(result.source || '-')}</div>
+      <div>片段数：${Number(finalState.total_chunks || result.chunks || 0)}</div>
+    `;
+  } else {
+    messageEl.textContent = (finalState && finalState.error_message)
+      ? `入库失败：${finalState.error_message}`
+      : '入库未完成，请重试';
+    resultBox.innerHTML = '';
+    resultBox.classList.add('hidden');
+  }
+  return finalState;
+}
+
+
 async function uploadDocument(event) {
   event.preventDefault();
   const input = document.querySelector('#documentFile');
@@ -170,17 +219,10 @@ async function uploadDocument(event) {
 
   try {
     const result = await API.uploadDocument(file, selectedEmployeeOrganization.id);
-    message.textContent = '文档已提交，等待审核员审核后生效';
-    message.classList.add('success');
-    resultBox.innerHTML = `
-      <div>文档编号：<strong>${escapeHtml(result.doc_id || '-')}</strong></div>
-      <div>审核状态：<span class="badge">${statusText(result.trust_level || 'unknown')}</span></div>
-      <div>source：${escapeHtml(result.source || '-')}</div>
-      <div>chunks：${Number(result.chunks || 0)}</div>
-    `;
-    resultBox.classList.remove('hidden');
+    // F36异步化：后端立即返回task_id，向量化在后台进行，这里改为跟进度。
     input.value = '';
-    await refreshDocumentViews();
+    const finalState = await trackIngestProgress(result, message, resultBox);
+    if (finalState && finalState.status === 'done') await refreshDocumentViews();
   } catch (error) {
     message.textContent = briefError(error);
   } finally {
@@ -206,18 +248,13 @@ async function inputKnowledge(event) {
 
   try {
     const result = await API.inputKnowledge(title, content, selectedEmployeeOrganization.id);
-    message.textContent = '已提交，等待审核员审核后生效';
-    message.classList.add('success');
-    resultBox.innerHTML = `
-      <div>文档编号：<strong>${escapeHtml(result.doc_id || '-')}</strong></div>
-      <div>审核状态：<span class="badge">${statusText(result.trust_level || 'unknown')}</span></div>
-      <div>source：${escapeHtml(result.source || '-')}</div>
-      <div>chunks：${Number(result.chunks || 0)}</div>
-    `;
-    resultBox.classList.remove('hidden');
-    titleInput.value = '';
-    contentInput.value = '';
-    await refreshDocumentViews();
+    // F36异步化：与上传同一口径，拿task_id后跟进度
+    const finalState = await trackIngestProgress(result, message, resultBox);
+    if (finalState && finalState.status === 'done') {
+      document.querySelector('#knowledgeTitle').value = '';
+      document.querySelector('#knowledgeContent').value = '';
+      await refreshDocumentViews();
+    }
   } catch (error) {
     message.textContent = briefError(error);
   } finally {

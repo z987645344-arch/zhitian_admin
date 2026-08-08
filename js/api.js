@@ -193,6 +193,39 @@
         json: false,
       });
     },
+    // F36异步化：入库任务进度经SSE推送。EventSource不支持自定义请求头，
+    // 拿不到Bearer token，因此与web_client的chatStream一样用fetch流式读取。
+    streamTaskProgress: async (taskId, onProgress) => {
+      const response = await fetch(`${backendUrl}/tasks/${encodeURIComponent(taskId)}/stream`, {
+        method: 'GET',
+        headers: headers(false),
+      });
+      if (!response.ok) throw new Error(`进度连接失败：HTTP ${response.status}`);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      let last = null;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          // 以冒号开头的是SSE注释（心跳），仅用于保活，不是数据
+          if (!line.startsWith('data: ')) continue;
+          try {
+            last = JSON.parse(line.slice(6));
+          } catch (error) {
+            continue;
+          }
+          onProgress(last);
+          if (['done', 'failed', 'interrupted'].includes(last.status)) return last;
+        }
+      }
+      return last;
+    },
+
     inputKnowledge: (title, content, organizationId) =>
       request('/knowledge/input', {
         method: 'POST',
