@@ -120,9 +120,9 @@ function applyWorkGate(joinedOrganizations) {
 }
 
 // F36：与后端config.MAX_UPLOAD_SIZE_MB保持一致，改动时需同步。
-// F37：换中文嵌入模型后向量化降到约21切片/秒，故由2MB再下调到1MB。
-// 服务端另有切片数上限（2000）作为更精确的控制，前端只做体积预筛。
-const MAX_UPLOAD_MB = 1;
+// 2026-08-11按用户体验反馈放宽到5MB；服务端仍以2000切片作为处理时长护栏，
+// 前端体积校验只是廉价预筛，正文过多时服务端会明确提示拆分。
+const MAX_UPLOAD_MB = 5;
 
 function formatSize(bytes) {
   return bytes >= 1024 * 1024

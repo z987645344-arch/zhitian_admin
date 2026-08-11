@@ -46,7 +46,7 @@ const OrgLobby = (() => {
       return `<button data-org-action="join" data-org-id="${Number(item.id)}">申请加入</button>`;
     }
     if (item.my_status === 'joined') {
-      return `<button class="secondary" data-org-action="leave" data-org-id="${Number(item.id)}">申请退出</button>`;
+      return `<button class="secondary" data-org-action="leave" data-org-id="${Number(item.id)}" data-org-name="${escapeHtml(item.name)}">申请退出</button>`;
     }
     return '<span class="muted">审批中</span>';
   }
@@ -106,6 +106,13 @@ const OrgLobby = (() => {
     const id = button.dataset.orgId;
     const action = button.dataset.orgAction;
     const messageBox = document.querySelector(options.messageSelector);
+    if (action === 'leave') {
+      const organizationName = button.dataset.orgName || '该组织';
+      const confirmed = window.confirm(
+        `确定申请退出“${organizationName}”吗？\n审批通过后，你将无法继续访问该组织的工作区。`,
+      );
+      if (!confirmed) return;
+    }
     button.disabled = true;
     try {
       if (action === 'join') {
