@@ -210,3 +210,6 @@
 - `js/api.js`新增`rateLimits()`与`saveRateLimits(limits)`，对应后端`GET/PUT /developer/rate-limits`。
 - `js/developer.js`新增`loadRateLimits()`与`saveRateLimits()`：页面初始化时与其他面板并行加载；保存前先在前端校验四个值均为不小于1的整数，提交后用服务端返回值回填输入框，成功提示「已保存，立即生效」，失败展示后端错误原因。
 - 真实浏览器验证：登录0号developer控制台，面板正确加载种子值20/20/60/60；改为customer=33、reviewer=77保存后提示成功，服务端库内确认真实落库并记录修改人与时间。
+
+## 2026-08-15 管理后台版本文件对齐v3.2
+- `VERSION`由`3.0.0`更新为`3.2.0`，与仓库当前最新功能标签`v3.2`一致；既有容器CI继续从该文件生成版本镜像标签，未修改构建或运行逻辑。
