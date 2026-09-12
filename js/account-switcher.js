@@ -56,7 +56,7 @@ const AccountSwitcher = (() => {
       </button>
       <div id="accountSwitcherMenu" class="account-switcher-menu hidden" role="menu">
         ${options || '<p class="muted account-empty">暂无已保存账号</p>'}
-        <button type="button" id="addAccountOption" class="account-option account-add">+ 添加账号</button>
+        <button type="button" id="addAccountOption" class="account-option account-add">+ 登录另一个账号</button>
       </div>`;
 
     const toggle = container.querySelector('#accountSwitcherToggle');

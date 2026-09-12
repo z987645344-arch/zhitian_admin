@@ -28,7 +28,7 @@ const OrgLobby = (() => {
     return `
       <article class="lobby-block">
         <h3>${escapeHtml(title)}</h3>
-        <p>${body ? escapeHtml(body) : '<span class="muted">暂未设置</span>'}</p>
+        <p>${body ? escapeHtml(body) : '<span class="muted">管理员尚未发布这部分说明，更新后会显示在这里。</span>'}</p>
       </article>
     `;
   }

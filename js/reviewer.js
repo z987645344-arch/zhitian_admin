@@ -411,7 +411,7 @@ async function loadPending() {
     const data = await API.pendingDocuments(selectedReviewerOrganization.id);
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无待审核文档', 6);
+      table.innerHTML = rowMessage('目前没有待审核文档。组织成员提交后会出现在这里。', 6);
       return;
     }
     table.innerHTML = documents
@@ -559,7 +559,7 @@ async function loadDocuments() {
     const data = await API.listVerifiedDocuments(selectedReviewerOrganization.id);
     const documents = Array.isArray(data.documents) ? data.documents : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无已通过文档', 7);
+      table.innerHTML = rowMessage('这里还没有已通过的文档。审核通过后即可在此管理。', 7);
       return;
     }
     refreshUsageMonthOptions(documents);

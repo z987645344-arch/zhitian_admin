@@ -2,16 +2,16 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>审核工作台 · 知天管理后台</title><link rel="stylesheet" href="./css/style.css" />
+    <title>审核工作台 · 知天管理后台</title><link rel="stylesheet" href="./css/style.css?v=archive-ui-20260912" />
   </head>
   <body>
     <div class="app-layout">
       <aside class="sidebar">
         <a class="brand" href="./reviewer.html"><span class="brand-symbol">知</span><span><strong>审核工作台</strong><small>知识审核与治理</small></span></a>
         <nav class="side-nav" aria-label="审核工作台导航">
-          <a class="active" href="#employeeAccessPanel">员工账号审批</a><a href="#orgMembershipPanel">员工组织申请</a><a href="#lobbySection">组织大厅</a><a href="#joinedOrganizationsPanel">已加入组织</a><a href="#retrieveDebugPanel">检索调试</a><a href="#memoryOverviewPanel">记忆总览</a>
+          <a class="active" href="#employeeAccessPanel">员工账号审批</a><a href="#orgMembershipPanel">员工组织申请</a><a href="#lobbySection">组织大厅</a><a href="#joinedOrganizationsPanel">已加入组织</a><a href="#retrieveDebugPanel">核对检索结果</a><a href="#memoryOverviewPanel">存储概况</a>
         </nav>
-        <div class="sidebar-note"><span class="status-dot"></span><div><strong>知识治理在线</strong><small>仅已通过内容参与检索</small></div></div>
+        <div class="sidebar-note"><span class="status-dot"></span><div><strong>按职责协作</strong><small>仅已通过内容参与检索</small></div></div>
         <div class="account-card"><div class="account-avatar">审</div><div><strong id="currentUser"></strong><small>审核员</small></div></div>
         <button id="logoutButton" class="secondary sidebar-logout">退出登录</button>
       </aside>
@@ -66,19 +66,21 @@
           </div>
         </section>
 
+        <details class="diagnostics-deck"><summary><span>02 / 辅助检查</span><strong>需要核对结果时，再展开诊断</strong></summary>
         <section id="retrieveDebugPanel" class="panel reviewer-work-panel">
-          <div class="section-title"><div><p class="section-kicker">检索检查</p><h2>检索调试</h2></div><span class="format-label">不会访问个人记忆</span></div>
+          <div class="section-title"><div><p class="section-kicker">检索检查</p><h2>核对检索结果</h2></div><span class="format-label">不会访问个人记忆</span></div>
           <p class="section-copy">检查企业文档候选、分数与审核状态；默认仅查询已通过内容。</p>
           <div class="debug-form"><input id="debugQuery" type="text" placeholder="输入需要验证的问题" /><input id="debugTopK" type="number" min="1" max="20" value="5" aria-label="候选数量" /><label class="debug-checkbox"><input id="debugIncludePending" type="checkbox" />同时检查待审核内容</label><button id="runDebugRetrieve">开始检查</button></div>
           <p id="debugThreshold" class="muted"></p><div class="table-wrap"><table><thead><tr><th>来源文件</th><th>文档编号</th><th>审核状态</th><th>片段序号</th><th>向量分数</th><th>标题加分</th><th>最终分数</th></tr></thead><tbody id="debugRetrieveTable"></tbody></table></div>
         </section>
 
         <section id="memoryOverviewPanel" class="panel reviewer-work-panel">
-          <div class="section-title"><div><p class="section-kicker">存储状态</p><h2>记忆总览</h2></div><button id="refreshStats" class="secondary">刷新状态</button></div>
+          <div class="section-title"><div><p class="section-kicker">存储状态</p><h2>存储概况</h2></div><button id="refreshStats" class="secondary">刷新状态</button></div>
           <div class="stats-grid"><div class="stat-card"><span>企业知识片段</span><strong id="vectorCount">-</strong><small>向量库中的文档片段数</small></div><div class="stat-card"><span>持久对话记录</span><strong id="sqliteCount">-</strong><small>本地数据库中保存的对话数</small></div></div>
         </section>
+        </details>
       </main>
     </div>
-    <script src="./config.js"></script><script src="./js/api.js"></script><script src="./js/account-switcher.js"></script><script src="./js/org-lobby.js?v=upload-5mb-confirm-1"></script><script src="./js/reviewer.js"></script>
+    <script src="./config.js"></script><script src="./js/api.js?v=archive-ui-20260912"></script><script src="./js/account-switcher.js?v=archive-ui-20260912"></script><script src="./js/org-lobby.js?v=archive-ui-20260912"></script><script src="./js/reviewer.js?v=archive-ui-20260912"></script>
   </body>
 </html>

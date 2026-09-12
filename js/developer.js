@@ -205,8 +205,8 @@ async function loadPersonnelOverview() {
     grid.innerHTML = [['developer','开发者'],['reviewer','审核员'],['employee','员工'],['customer','客户']].map(([role,label]) => headcountCard(label, stats.counts?.[role], stats.changes?.[role])).join('');
     const developers = users.filter((item) => item.role === 'developer');
     const reviewers = users.filter((item) => item.role === 'reviewer');
-    developerTable.innerHTML = developers.length ? developers.map(personnelRow).join('') : rowMessage('暂无开发者账号', 6);
-    reviewerTable.innerHTML = reviewers.length ? reviewers.map(personnelRow).join('') : rowMessage('暂无审核员账号', 6);
+    developerTable.innerHTML = developers.length ? developers.map(personnelRow).join('') : rowMessage('还没有可显示的开发者账号。', 6);
+    reviewerTable.innerHTML = reviewers.length ? reviewers.map(personnelRow).join('') : rowMessage('还没有审核员账号。申请通过后会出现在这里。', 6);
     bindPersonnelRowEvents(developerTable);
     bindPersonnelRowEvents(reviewerTable);
   } catch (error) {
@@ -326,7 +326,7 @@ async function loadOrganizations() {
   try {
     const data = await API.listOrganizations();
     const items = Array.isArray(data.organizations) ? data.organizations : [];
-    table.innerHTML = items.length ? items.map(organizationRow).join('') : rowMessage('暂无组织', 4);
+    table.innerHTML = items.length ? items.map(organizationRow).join('') : rowMessage('还没有组织。创建组织后可以邀请成员加入。', 4);
     table.querySelectorAll('[data-edit-org]').forEach((button) => button.addEventListener('click', () => beginOrganizationEdit(button.dataset.editOrg)));
     table.querySelectorAll('[data-delete-org]').forEach((button) => {
       const row = button.closest('tr');
@@ -410,15 +410,15 @@ async function loadMetrics() {
     renderStageTimings(data.recent_requests||[]); renderTrend(data.recent_requests||[]); renderTraceDetail();
   } catch(error) { metricsGrid.innerHTML=`<p class="message">${escapeHtml(briefError(error))}</p>`; }
 }
-function renderStageTimings(records) { const stages={}; records.forEach((record)=>Object.entries(record.stage_timings||{}).forEach(([name,time])=>{const item=stages[name]||{total:0,count:0};item.total+=Number(time||0);item.count++;stages[name]=item;})); const rows=Object.entries(stages); stageTimingTable.innerHTML=rows.length?rows.map(([name,item])=>`<tr><td>${escapeHtml(name)}</td><td>${Math.round(item.total/item.count)}ms</td><td>${item.count}</td></tr>`).join(''):rowMessage('暂无阶段数据',3); }
-function renderTraceDetail() { const id=traceIdQuery.value.trim(); if(!id){traceDetail.classList.add('hidden');return;} const record=(window.latestMetrics?.recent_requests||[]).find((item)=>item.trace_id===id); traceDetail.classList.remove('hidden'); traceDetail.textContent=record?`模式：${record.mode}；状态：${record.status}；总耗时：${record.total_elapsed_ms}ms；阶段：${JSON.stringify(record.stage_timings||{})}`:'未找到该 trace_id。'; }
+function renderStageTimings(records) { const stages={}; records.forEach((record)=>Object.entries(record.stage_timings||{}).forEach(([name,time])=>{const item=stages[name]||{total:0,count:0};item.total+=Number(time||0);item.count++;stages[name]=item;})); const rows=Object.entries(stages); stageTimingTable.innerHTML=rows.length?rows.map(([name,item])=>`<tr><td>${escapeHtml(name)}</td><td>${Math.round(item.total/item.count)}ms</td><td>${item.count}</td></tr>`).join(''):rowMessage('还没有可统计的阶段记录。发生对话请求后再刷新。',3); }
+function renderTraceDetail() { const id=traceIdQuery.value.trim(); if(!id){traceDetail.classList.add('hidden');return;} const record=(window.latestMetrics?.recent_requests||[]).find((item)=>item.trace_id===id); traceDetail.classList.remove('hidden'); traceDetail.textContent=record?`模式：${record.mode}；状态：${record.status}；总耗时：${record.total_elapsed_ms}ms；阶段：${JSON.stringify(record.stage_timings||{})}`:'未找到这条请求。请核对追踪编号；服务重启前的记录不会保留。'; }
 function renderTrend(records) {
   const recent = records.slice(-30);
   const values = recent.map((item) => Number(item.total_elapsed_ms || 0));
   const maximum = Math.max(...values, 1);
   const points = values.map((value, index) => `${24 + (672 * index / Math.max(values.length - 1, 1))},${156 - (132 * value / maximum)}`);
   requestTrendChart.innerHTML = recent.length ? `<polyline class="trend-line" points="${points.join(' ')}" />` : '';
-  requestTrendTable.innerHTML = recent.length ? recent.slice().reverse().map((item) => `<tr><td>${escapeHtml(formatTimestamp(item.timestamp))}</td><td>${traceIdCell(item.trace_id)}</td><td>${escapeHtml(item.mode||'-')}</td><td>${Number(item.total_elapsed_ms||0)}ms</td><td>${escapeHtml(item.status||'-')}</td></tr>`).join('') : rowMessage('暂无趋势数据', 5);
+  requestTrendTable.innerHTML = recent.length ? recent.slice().reverse().map((item) => `<tr><td>${escapeHtml(formatTimestamp(item.timestamp))}</td><td>${traceIdCell(item.trace_id)}</td><td>${escapeHtml(item.mode||'-')}</td><td>${Number(item.total_elapsed_ms||0)}ms</td><td>${escapeHtml(item.status||'-')}</td></tr>`).join('') : rowMessage('还没有请求记录。使用一次对话后可回来查看。', 5);
   requestTrendTable.querySelectorAll('.trace-copy').forEach((button) => button.addEventListener('click', () => copyTraceId(button)));
 }
 

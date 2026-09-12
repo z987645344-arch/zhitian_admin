@@ -4,14 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>登录 · 知天管理后台</title>
-    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/style.css?v=archive-ui-20260912" />
   </head>
   <body class="auth-page">
     <main class="auth-shell">
       <section class="auth-intro" aria-label="平台说明">
         <div>
           <div class="brand-mark" aria-hidden="true">知</div>
-          <h1>企业知识，按职责安全流转。</h1>
+          <p class="intro-title">企业知识，按职责安全流转。</p>
           <p>员工提交、审核员确权、开发者维护。每个账号只进入与自身职责相符的工作区。</p>
           <div class="auth-assurances"><span>身份失效后立即停止访问</span><span>文档按组织隔离</span><span>危险操作均需明确确认</span></div>
         </div>
@@ -25,6 +25,7 @@
             <p class="muted">请选择账号职责，并使用对应账号登录。</p>
           </div>
           <form id="loginForm" class="form-stack">
+        <fieldset class="auth-step"><legend>01 / 身份信息</legend>
             <label>
               <span>用户名或企业邮箱</span>
               <input id="username" name="username" autocomplete="username" placeholder="请输入账号" required />
@@ -36,6 +37,7 @@
                 <button id="togglePassword" type="button" aria-label="显示密码" aria-pressed="false">显示</button>
               </span>
             </label>
+        </fieldset><fieldset class="auth-step"><legend>02 / 选择职责</legend>
             <label>
               <span>账号职责</span>
               <div class="role-toggle" role="radiogroup" aria-label="账号职责">
@@ -45,9 +47,10 @@
               </div>
               <input type="hidden" id="role" name="role" value="employee" required />
             </label>
+        </fieldset><fieldset class="auth-step"><legend>03 / 验证并进入</legend>
             <p id="message" class="message" aria-live="polite"></p>
             <button id="loginButton" type="submit" class="btn-block">安全登录</button>
-          </form>
+          </fieldset></form>
           <div class="auth-link auth-link-split"><a href="./request-access.html">申请企业账号</a><a href="./forgot-password.html">找回密码</a></div>
           <div class="role-note"><span>请勿共用账号</span><span>离开设备前请退出登录</span></div>
           <p class="auth-footer">知天企业管理平台</p>
@@ -55,7 +58,7 @@
       </div>
     </main>
     <script src="./config.js"></script>
-    <script src="./js/api.js"></script>
-    <script src="./js/login.js"></script>
+    <script src="./js/api.js?v=archive-ui-20260912"></script>
+    <script src="./js/login.js?v=archive-ui-20260912"></script>
   </body>
 </html>

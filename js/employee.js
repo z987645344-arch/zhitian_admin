@@ -67,7 +67,7 @@ function renderEmployeeOrganizations() {
   box.innerHTML = employeeJoinedOrganizations.length
     ? employeeJoinedOrganizations.map((item) => `
         <article class="organization-work-card">
-          <div><h3>${escapeHtml(item.name || '未命名组织')}</h3><p>${item.content ? escapeHtml(item.content) : '暂无组织简介'}</p></div>
+          <div><h3>${escapeHtml(item.name || '未命名组织')}</h3><p>${item.content ? escapeHtml(item.content) : '该组织还没有填写简介，可向组织管理员了解资料范围。'}</p></div>
           <div class="organization-work-counts single">
             <span>我上传的文档<strong>${Number(item.document_count || 0)}</strong></span>
           </div>
@@ -87,7 +87,7 @@ async function openEmployeeOrganization(organizationId) {
   if (!organization) return;
   selectedEmployeeOrganization = organization;
   document.querySelector('#employeeOrganizationTitle').textContent = organization.name || '组织详情';
-  document.querySelector('#employeeOrganizationSummary').textContent = organization.content || '暂无组织简介';
+  document.querySelector('#employeeOrganizationSummary').textContent = organization.content || '该组织还没有填写简介，可向组织管理员了解资料范围。';
   document.querySelector('#employeeOrganizationListView').classList.add('hidden');
   document.querySelector('#employeeOrganizationDetail').classList.remove('hidden');
   await loadDocuments();
@@ -275,7 +275,7 @@ async function loadDocuments() {
       )
       : [];
     if (!documents.length) {
-      table.innerHTML = rowMessage('暂无文档', 6);
+      table.innerHTML = rowMessage('这里还没有你的文档。可在上方上传文件或录入文字。', 6);
       return;
     }
     table.innerHTML = documents
