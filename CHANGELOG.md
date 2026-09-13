@@ -241,3 +241,12 @@
 - 本地样例服务驱动真实页面和脚本：六个主要页面在 1280×900 / 375×900 检查，页面 scrollWidth 均不超过视口；组织详情与两个诊断区另检查并截图。导航点击能自动展开 details；手动刷新指标能显示样例统计。原生折叠与 focus-visible、减少动态效果样式保留。
 - 10 个 JS 文件 node --check、git diff --check 通过；逐页原 id/name/data-* 属性保留，CSS :root 外 hex/rgb 字面量为 0。缓存统一 archive-ui-20260912。仓库没有独立单元测试命令，未把语法检查计作测试项。
 - 发现未改：原 HEAD developer.js 第 1 行先启动初始化，第 11 行才声明 metricsGrid；首次 loadMetrics 在 try 外触发 ReferenceError，并阻断后续 loadRequests。用未修改 HEAD 脚本真实复现相同错误，手动刷新可以工作；按行为不变约束未修。未验证真实服务、审批/删除/改密码、真实权限安全、读屏及 CI；截图是本地样例，视觉判断交用户。
+
+## 2026-09-13 存档：v3.3 覆盖 v3.2.1 之后的暗色体系设计与本条存档
+
+- 覆盖 2 个提交：`29ad449` 企业管理界面沿用客户端暗色体系（14 文件 +214/-98），以及本条存档提交（`VERSION` 升至 `3.3.0`）。含用户可见行为变化，按两段式。
+- 验证存档方独立核到的：JS 引用的 132 个 id，改前缺 7、改后缺 7，零新丢失（缺的 7 个为动态插入与已知无 DOM 的历史代码）；CSS 类 112→114 无删除；`developer.js`/`reviewer.js`/`employee.js` 抹掉字符串字面量后与 v3.2.1 哈希完全相同，改动可证明只在字符串内；10 个 JS `node --check` 通过；无外部资源、无主机名。
+- CI：静态 `CI` success（`29ad449`）；`Admin Container CI` 停在「Apply vulnerability policy after reports」，构建、扫描、容器启停均成功，属上游漏洞门禁，不影响部署判断。
+- 一处推送纠正：首次误推到不存在的 `main` 分支，已改推 `master` 并删除误建的 `main`，远程仅剩 `master`。
+- 发现未改（实施方报告，验证方复核）：`developer.js` 既有 ReferenceError（初始化早于 `metricsGrid` 声明），非本轮引入，待独立轮次修复。
+- 未验证：尚未部署；真实审批、删除、改密码与权限链由线上验收。
