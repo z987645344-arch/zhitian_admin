@@ -1,5 +1,3 @@
-if (API.ensureRole(['developer'])) initDeveloperPage();
-
 let currentDeveloper = null;
 const guidanceModule = document.querySelector('#guidanceModule');
 const toneModule = document.querySelector('#toneModule');
@@ -456,3 +454,6 @@ function rowMessage(text,colspan){return `<tr><td colspan="${colspan}" class="mu
 function briefError(error){return String(error.message||error).replaceAll('\n',' ').slice(0,120);}
 function formatTimestamp(value){if(!value)return '-';const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString();}
 function escapeHtml(value){return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
+
+// 必须放在文件末尾：initDeveloperPage 会同步用到上方的 const 声明，提前调用会触发暂时性死区错误。
+if (API.ensureRole(['developer'])) initDeveloperPage();
