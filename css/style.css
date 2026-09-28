@@ -685,6 +685,16 @@ body::after { z-index: 59; background: var(--vignette); }
 input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px var(--primary-soft), 0 0 22px -8px var(--amber-glow); }
 .trend-line { filter: drop-shadow(0 0 4px var(--amber-glow)); }
 
+.brand-mark,
+.brand-symbol { display: grid; overflow: hidden; border-radius: 12px; place-items: center; }
+.brand-symbol {
+  border: 1px solid var(--accent-line);
+  background: radial-gradient(circle at 30% 25%, var(--amber-hot), var(--primary) 60%);
+  box-shadow: 0 0 18px var(--amber-glow);
+}
+.brand-mark img,
+.brand-symbol img { display: block; width: 92%; height: auto; margin-top: 14%; }
+
 @media (max-width: 860px) {
   .auth-intro { background: transparent; }
 }
