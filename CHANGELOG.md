@@ -260,3 +260,4 @@
 - **证据**：`node --check` 全部脚本通过；登录、申请账号、开发者页在 1440×900 与 390×844 下渲染，页面级横向溢出 0。
 - **部署影响**：仅静态文件（重建 admin 容器即可），不涉及后端接口、`api.js`、`VERSION`、Dockerfile 与 nginx.conf。
 - **未验证 / 不得视为完成**：真实后端下的员工、审核员、开发者全流程；Safari/Firefox 毛玻璃表现；用户视觉验收；线上生效。
+- **品牌标记改为 OC 头像**（同轮追加）：所有圆形「知」字替换为用户提供的小男孩头像（`css/brand/avatar-128.webp`，已去白底，琥珀圆角底），并新增浏览器标签图标 `css/brand/favicon-32.png`、`apple-touch-icon.png`；图片放 `css/brand/` 同样是因为 Dockerfile 只复制 `css/`。七个页面的 `brand-mark` 与工作台侧栏 `brand-symbol` 均替换。
