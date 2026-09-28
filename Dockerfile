@@ -1,6 +1,8 @@
 FROM nginx:stable-alpine
 
-RUN rm -f /etc/nginx/conf.d/default.conf \
+# 基础镜像发布后 Alpine 仓库常先出安全补丁（如 libexpat），构建时升级已装包
+RUN apk upgrade --no-cache \
+    && rm -f /etc/nginx/conf.d/default.conf \
     && mkdir -p \
         /tmp/nginx/client_temp \
         /tmp/nginx/proxy_temp \
