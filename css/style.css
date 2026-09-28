@@ -1,47 +1,65 @@
+/* 知天管理后台样式。视觉与知了hub 对齐（Lamp & Node）：中性黑灰暗场、琥珀暖灯为唯一主色。 */
+
+@font-face { font-family: "Montserrat"; font-style: normal; font-weight: 800; font-display: swap; src: url("./fonts/montserrat-latin-800-normal.woff2") format("woff2"); }
+@font-face { font-family: "Montserrat"; font-style: normal; font-weight: 900; font-display: swap; src: url("./fonts/montserrat-latin-900-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("./fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 600; font-display: swap; src: url("./fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2"); }
+
 :root {
   color-scheme: dark;
-  --black: #11191d;
-  --text: #eff2f3;
-  --muted: #b7c0c3;
-  --subtle: #929fa4;
+  --black: #050506;
+  --text: #ececee;
+  --muted: #a1a1aa;
+  --subtle: #71717a;
   --placeholder: var(--subtle);
   --selection-bg: var(--primary);
   --selection-text: var(--on-primary);
   --scrollbar-thumb: var(--subtle);
   --scrollbar-track: var(--bg);
-  --line: rgba(239, 242, 243, .14);
-  --line-strong: rgba(239, 242, 243, .22);
-  --bg: #20292e;
-  --surface: #29343a;
-  --surface-low: #172025;
-  --surface-high: #344047;
-  --primary: #b3b7a4;
-  --primary-hover: #c6cab9;
-  --primary-soft: #3a4541;
-  --danger: #dc9188;
-  --danger-bg: #3b2929;
-  --success: #9bbcaf;
-  --success-bg: #263831;
-  --warning: #d8b071;
-  --warning-bg: #3a3024;
-  --on-primary: #20292e;
-  --accent-line: rgba(179, 183, 164, .44);
-  --sidebar-bg: #172025;
-  --session-hover-bg: rgba(239, 242, 243, .06);
-  --welcome-bg: rgba(41, 52, 58, .96);
-  --header-bg: rgba(23, 32, 37, .96);
+  --line: rgba(255, 255, 255, .09);
+  --line-strong: rgba(255, 255, 255, .17);
+  --bg: #09090b;
+  --surface: #17171a;
+  --surface-low: #0f0f11;
+  --surface-high: #222226;
+  --primary: #f3b35a;
+  --primary-hover: #ffd08a;
+  --primary-soft: rgba(243, 179, 90, .14);
+  --danger: #f2a595;
+  --danger-bg: #2a1714;
+  --success: #8fd19e;
+  --success-bg: #13241a;
+  --warning: #e9c27a;
+  --warning-bg: #2a2114;
+  --on-primary: #17130d;
+  --accent-line: rgba(243, 179, 90, .45);
+  --sidebar-bg: #0c0c0e;
+  --session-hover-bg: rgba(255, 255, 255, .04);
+  --welcome-bg: rgba(23, 23, 26, .72);
+  --header-bg: rgba(9, 9, 11, .78);
   --bubble-shadow: 0 6px 22px rgba(0, 0, 0, .14);
   --session-shadow: 0 5px 18px rgba(0, 0, 0, .16);
   --sidebar-shadow: 14px 0 40px rgba(0, 0, 0, .34);
   --backdrop-bg: rgba(0, 0, 0, .62);
-  --primary-shadow: 0 7px 18px rgba(179, 183, 164, .12);
-  --primary-active-shadow: 0 4px 12px rgba(179, 183, 164, .16);
+  --primary-shadow: 0 8px 26px -8px rgba(243, 179, 90, .45);
+  --primary-active-shadow: 0 4px 14px -4px rgba(243, 179, 90, .5);
   --radius: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
   --shadow: 0 18px 48px rgba(0, 0, 0, .24);
-  --font: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-  --font-mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  --font: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI", Arial, sans-serif;
+  --font-display: "Montserrat", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  --amber-hot: #ffd08a;
+  --amber-glow: rgba(243, 179, 90, .42);
+  --glass-edge: rgba(255, 255, 255, .09);
+  --glass: rgba(23, 23, 26, .66);
+  --lamp: radial-gradient(70% 60% at 0% 0%, rgba(243, 179, 90, .14), transparent 65%);
+  --lamp-low: radial-gradient(60% 70% at 0% 100%, rgba(243, 160, 70, .2), transparent 70%);
+  --dot-grid: radial-gradient(rgba(255, 255, 255, .06) 1px, transparent 1.2px);
+  --vignette: radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(0, 0, 0, .45));
+  --title-fill: linear-gradient(180deg, #ffffff 30%, #c9c9cf);
+  --node-ring: 0 0 0 4px rgba(243, 179, 90, .14), 0 0 14px 2px rgba(243, 179, 90, .42);
   --duration-fast: 140ms;
   --duration-base: 220ms;
   --ease: cubic-bezier(.22, 1, .36, 1);
@@ -591,6 +609,86 @@ td code, .trace-copy, .format-label, .status-verified, .score-ok, .score-low { f
   .auth-link-split { flex-wrap: wrap; gap: 12px; }
   .diagnostics-deck > summary span { display: block; margin-bottom: 10px; }
 }
+/* ---------- Lamp & Node：暖灯、节点与玻璃质感（只改显示层） ---------- */
+
+body::before,
+body::after { position: fixed; inset: 0; content: ""; pointer-events: none; }
+body::before { z-index: 60; background-image: url("./grain.svg"); background-size: 180px 180px; mix-blend-mode: overlay; opacity: .06; }
+body::after { z-index: 59; background: var(--vignette); }
+
+.auth-page,
+.auth-redirect-page { background: var(--lamp), var(--bg); }
+.auth-intro { background: var(--lamp-low), var(--dot-grid) 0 0 / 22px 22px, var(--bg); }
+.workspace { background: var(--lamp), var(--bg); }
+.sidebar { background: var(--sidebar-bg); }
+
+.brand-mark {
+  border-color: var(--accent-line);
+  background: radial-gradient(circle at 30% 25%, var(--amber-hot), var(--primary) 60%);
+  box-shadow: 0 0 22px var(--amber-glow);
+  color: var(--on-primary);
+  font-weight: 900;
+}
+
+.auth-intro h1,
+.auth-intro .intro-title,
+.auth-heading h1,
+.workspace-header h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  background: var(--title-fill);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.eyebrow,
+.section-kicker { display: inline-flex; align-items: center; gap: 10px; color: var(--primary); }
+.eyebrow::before,
+.section-kicker::before {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--amber-hot);
+  box-shadow: var(--node-ring);
+  content: "";
+}
+
+.side-nav a { position: relative; }
+.side-nav a.active { box-shadow: inset 2px 0 0 var(--primary); }
+.side-nav a.active::after {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 6px;
+  height: 6px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--amber-hot);
+  box-shadow: var(--node-ring);
+  content: "";
+}
+
+.auth-card,
+.panel,
+.stat-card,
+.org-card,
+.redirect-card {
+  border-color: var(--glass-edge);
+  background: var(--lamp), var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.diagnostics-deck .panel { background: var(--glass); }
+
+input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px var(--primary-soft), 0 0 22px -8px var(--amber-glow); }
+.trend-line { filter: drop-shadow(0 0 4px var(--amber-glow)); }
+
+@media (max-width: 860px) {
+  .auth-intro { background: transparent; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
 }

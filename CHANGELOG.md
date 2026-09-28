@@ -250,3 +250,13 @@
 - 一处推送纠正：首次误推到不存在的 `main` 分支，已改推 `master` 并删除误建的 `main`，远程仅剩 `master`。
 - 发现未改（实施方报告，验证方复核）：`developer.js` 既有 ReferenceError（初始化早于 `metricsGrid` 声明），非本轮引入，待独立轮次修复。
 - 未验证：尚未部署；真实审批、删除、改密码与权限链由线上验收。
+
+## 2026-09-28 候选（frontend/round-2）—— 管理端视觉改版「Lamp & Node」与开发者页初始化报错修复；未合并、未打标、未部署
+
+- `css/style.css`：只替换 `:root` 令牌（灰绿水泥灰 → 中性黑灰 + 琥珀暖灯）并追加显示层（发光节点标签、侧栏当前项节点、暖灯径向光、磨砂玻璃面板与卡片、胶片颗粒与暗角）；`:root` 外 hex / rgb / rgba 仍为 **0**。按钮形状、文案与所有 id / name / data-* 钩子不变。
+- 新增 `css/fonts/`（Montserrat 800/900、JetBrains Mono 400/600 latin 子集，附 SIL OFL 1.1）与 `css/grain.svg`；放在 `css/` 下是因为 Dockerfile 只复制 `css/`、`js/`、`config.js` 与 HTML，本轮不改部署文件。
+- 七个页面资源版本由 `archive-ui-20260912` 统一改为 `lamp-node-20260928`。
+- **修复** `js/developer.js`：文件第 1 行即调用 `initDeveloperPage()`，而它同步用到的 `metricsGrid` 等 `const` 声明在其后，开发者页加载即抛 `ReferenceError: Cannot access 'metricsGrid' before initialization`，运行指标区块无法初始化。改为在文件末尾调用，逻辑其余未改。修复前后在本地浏览器（模拟接口、developer 角色）实测：修复前每次加载都报该错，修复后加载并逐个点击可见按钮，页面错误 0。
+- **证据**：`node --check` 全部脚本通过；登录、申请账号、开发者页在 1440×900 与 390×844 下渲染，页面级横向溢出 0。
+- **部署影响**：仅静态文件（重建 admin 容器即可），不涉及后端接口、`api.js`、`VERSION`、Dockerfile 与 nginx.conf。
+- **未验证 / 不得视为完成**：真实后端下的员工、审核员、开发者全流程；Safari/Firefox 毛玻璃表现；用户视觉验收；线上生效。
