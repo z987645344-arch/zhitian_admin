@@ -267,3 +267,9 @@
 - **部署影响**：仅静态文件（重建 admin 容器即可），不涉及后端接口、`api.js`、`VERSION`、Dockerfile 与 nginx.conf。
 - **未验证 / 不得视为完成**：真实后端下的员工、审核员、开发者全流程；Safari/Firefox 毛玻璃表现；用户视觉验收；线上生效。
 - **品牌标记改为 OC 头像**（同轮追加）：所有圆形「知」字替换为用户提供的小男孩头像（`css/brand/avatar-128.webp`，已去白底，琥珀圆角底），并新增浏览器标签图标 `css/brand/favicon-32.png`、`apple-touch-icon.png`；图片放 `css/brand/` 同样是因为 Dockerfile 只复制 `css/`。七个页面的 `brand-mark` 与工作台侧栏 `brand-symbol` 均替换。
+
+## 2026-09-28 v3.4.1 容器镜像安全补丁：构建时升级 Alpine 包
+- **问题**：`Admin Container CI` 的 Trivy 门禁自 2026-09-13 起在 master 持续报红，唯一的 HIGH 为基础镜像 `nginx:stable-alpine`（Alpine 3.24.2）自带的 `libexpat 2.8.4-r0`（CVE-2026-93990，XML 注入），Alpine 仓库已提供修复版 `2.8.5-r0`，但上游 nginx 镜像尚未重新发布，所以线上容器同样带着该漏洞。
+- **修复**：`Dockerfile` 在已有的 root 阶段 `RUN` 开头追加 `apk upgrade --no-cache`，构建时把已安装包升级到仓库最新补丁版本；不改基础镜像标签、不改 `nginx.conf`、不改运行用户（仍在最后切换为非 root `nginx`）、不改任何页面与脚本。以后同类"仓库已修、基础镜像未跟进"的漏洞也会随重新构建自动消除。
+- **证据**：本地用原 Dockerfile 构建，镜像内 `apk list -I` 显示 `libexpat-2.8.4-r0`，与 CI 报告一致。本地沙箱网络拦截 Alpine 镜像站，未能在本地完成补丁后构建，补丁后结果以本提交的 GitHub `Admin Container CI`（构建、安全头、目录浏览、Trivy 门禁）为准。
+- **部署影响**：重建 admin 容器即可；构建机需能访问 Alpine 包仓库。`VERSION` 3.4.0 → 3.4.1。
