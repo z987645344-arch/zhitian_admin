@@ -284,7 +284,7 @@ async function loadDocuments() {
           <td title="${escapeHtml(item.source || '')}">${escapeHtml(API.filename(item.source || ''))}</td>
           <td>${Number(item.chunk_count || 0)}</td>
           <td>${organizationLabel(item)}</td>
-          <td>${escapeHtml(item.uploaded_at || '-')}</td>
+          <td>${escapeHtml(ZhitianTime.formatLocalTime(item.uploaded_at))}</td>
           <td>${statusBadge(item.trust_level || 'unknown')}</td>
           <td>${documentAction(item)}</td>
         </tr>

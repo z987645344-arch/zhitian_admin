@@ -152,7 +152,7 @@ async function loadOrgRequests() {
     const data = await API.reviewerOrgMembershipRequests();
     const requests = Array.isArray(data.requests) ? data.requests : [];
     table.innerHTML = requests.length ? requests.map((item) => `
-      <tr><td>${escapeHtml(item.username || '-')}</td><td>${escapeHtml(item.organization_name || '-')}</td><td>${item.action === 'join' ? '申请加入' : '申请退出'}</td><td>${escapeHtml(formatTimestamp(item.requested_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>
+      <tr><td>${escapeHtml(item.username || '-')}</td><td>${escapeHtml(item.organization_name || '-')}</td><td>${item.action === 'join' ? '申请加入' : '申请退出'}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.requested_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>
     `).join('') : rowMessage('暂无待处理的组织申请', 5);
     table.querySelectorAll('button[data-action]').forEach((button) => button.addEventListener('click', async () => {
       try {
@@ -172,7 +172,7 @@ async function loadEnterprisePassword() {
   try {
     const data = await API.reviewerEnterprisePassword();
     value.textContent = data.password || '-';
-    refresh.textContent = `下次刷新：${formatTimestamp(data.next_refresh_at)}`;
+    refresh.textContent = `下次刷新：${ZhitianTime.formatLocalTime(data.next_refresh_at)}`;
   } catch (error) {
     value.textContent = '暂无法加载';
     refresh.textContent = briefError(error);
@@ -188,7 +188,7 @@ async function loadEmployeeRequests() {
     const data = await API.reviewerRegistrationRequests();
     const requests = Array.isArray(data.requests) ? data.requests : [];
     table.innerHTML = requests.length ? requests.map((item) => `
-      <tr><td>${escapeHtml(item.username || item.email || '-')}</td><td>${escapeHtml(formatTimestamp(item.created_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>
+      <tr><td>${escapeHtml(item.username || item.email || '-')}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.created_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>
     `).join('') : rowMessage('暂无待审批员工申请', 3);
     table.querySelectorAll('button[data-action]').forEach((button) => button.addEventListener('click', async () => {
       try {
@@ -298,7 +298,7 @@ async function loadMetrics() {
     const modelCalls = data.model_calls || {};
     const errors = data.provider_errors || {};
     window.latestReviewerMetrics = data;
-    timestamp.textContent = `数据截至 ${formatTimestamp(data.stats_since)}`;
+    timestamp.textContent = `数据截至 ${ZhitianTime.formatLocalTime(data.stats_since)}`;
     const cards = [
       ['请求总数', requests.total],
       ['成功', requests.success],
@@ -367,7 +367,7 @@ function renderRequestTrend(records) {
   const table = document.querySelector('#requestTrendTable');
   const recent = records.slice(-30);
   table.innerHTML = recent.length ? recent.slice().reverse().map((record) => `
-    <tr><td>${escapeHtml(formatTimestamp(record.timestamp))}</td><td>${escapeHtml(record.mode || '-')}</td><td>${Number(record.total_elapsed_ms || 0)}ms</td><td>${escapeHtml(record.status || '-')}</td></tr>
+    <tr><td>${escapeHtml(ZhitianTime.formatLocalTime(record.timestamp))}</td><td>${escapeHtml(record.mode || '-')}</td><td>${Number(record.total_elapsed_ms || 0)}ms</td><td>${escapeHtml(record.status || '-')}</td></tr>
   `).join('') : rowMessage('暂无请求趋势数据', 4);
   if (!recent.length) {
     chart.innerHTML = '';
@@ -397,12 +397,6 @@ function errorSummary(errors) {
   return `超时 ${values.timeout || 0} / 限流 ${values.rate_limit || 0} / 其他 ${values.other || 0}`;
 }
 
-function formatTimestamp(value) {
-  if (!value) return '-';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
-}
-
 async function loadPending() {
   const table = document.querySelector('#pendingTable');
   if (!selectedReviewerOrganization) return;
@@ -424,7 +418,7 @@ async function loadPending() {
           </td>
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
           <td>${organizationLabel(item)}</td>
-          <td>${escapeHtml(item.uploaded_at || '-')}</td>
+          <td>${escapeHtml(ZhitianTime.formatLocalTime(item.uploaded_at))}</td>
           <td>
             <div class="actions">
               <button class="secondary" data-action="preview" data-doc-id="${escapeHtml(item.doc_id || '')}">预览</button>
@@ -573,7 +567,7 @@ async function loadDocuments() {
           <td>${Number(item.chunk_count || 0)}</td>
           <td>${escapeHtml(item.uploaded_by || '-')}</td>
           <td>${organizationLabel(item)}</td>
-          <td>${escapeHtml(item.reviewed_at || '-')}</td>
+          <td>${escapeHtml(ZhitianTime.formatLocalTime(item.reviewed_at))}</td>
           <td data-usage-doc-id="${escapeHtml(item.doc_id || '')}" data-usage-total="${escapeHtml(usageCellMarkup(item))}">${usageCellMarkup(item)}</td>
           <td><button class="danger" data-doc-id="${escapeHtml(item.doc_id || '')}" data-document-name="${escapeHtml(item.source || '')}">删除</button></td>
         </tr>

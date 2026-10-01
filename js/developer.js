@@ -59,7 +59,7 @@ async function loadOrgMembershipRequests() {
     table.innerHTML = requests.length ? requests.map((item) => {
       const roleLabel = item.applicant_role === 'reviewer' ? '审核员' : '员工';
       const fallback = item.cold_start_fallback ? ' <span class="badge badge-pending">冷启动兜底</span>' : '';
-      return `<tr><td>${escapeHtml(item.username || '-')}</td><td>${roleLabel}${fallback}</td><td>${escapeHtml(item.organization_name || '-')}</td><td>${item.action === 'join' ? '申请加入' : '申请退出'}</td><td>${escapeHtml(formatTimestamp(item.requested_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>`;
+      return `<tr><td>${escapeHtml(item.username || '-')}</td><td>${roleLabel}${fallback}</td><td>${escapeHtml(item.organization_name || '-')}</td><td>${item.action === 'join' ? '申请加入' : '申请退出'}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.requested_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve">批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div></td></tr>`;
     }).join('') : `<tr><td colspan="6" class="muted">暂无待处理的组织申请</td></tr>`;
     table.querySelectorAll('button[data-action]').forEach((button) => button.addEventListener('click', async () => {
       try {
@@ -96,7 +96,7 @@ async function loadLobbyContent() {
     document.querySelector('#lobbyAnnouncements').value = data.company_announcements || '';
     document.querySelector('#lobbyIndustryStandards').value = data.industry_standards || '';
     setLobbyEditing(false);
-    status.textContent = data.updated_at ? `最近更新：${formatTimestamp(data.updated_at)}` : '尚未设置大厅内容';
+    status.textContent = data.updated_at ? `最近更新：${ZhitianTime.formatLocalTime(data.updated_at)}` : '尚未设置大厅内容';
   } catch (error) { status.textContent = briefError(error); }
 }
 
@@ -115,7 +115,7 @@ async function loadEnterprisePassword() {
   try {
     const data = await API.developerEnterprisePassword();
     value.textContent = data.password || '-';
-    refresh.textContent = `下次刷新：${formatTimestamp(data.next_refresh_at)}`;
+    refresh.textContent = `下次刷新：${ZhitianTime.formatLocalTime(data.next_refresh_at)}`;
   } catch (error) {
     value.textContent = '暂无法加载';
     refresh.textContent = briefError(error);
@@ -144,7 +144,7 @@ async function refreshEnterprisePassword() {
   try {
     const data = await API.refreshEnterprisePassword();
     value.textContent = data.password || '-';
-    refresh.textContent = `下次刷新：${formatTimestamp(data.next_refresh_at)}`;
+    refresh.textContent = `下次刷新：${ZhitianTime.formatLocalTime(data.next_refresh_at)}`;
     dialog.close();
   } catch (error) {
     refresh.textContent = briefError(error);
@@ -175,7 +175,7 @@ async function loadRequests() {
 function renderRequestTable(table, requests, blockApproval) {
   table.innerHTML = requests.length ? requests.map((item) => {
       const blocked = Boolean(currentDeveloper?.is_default_account && item.requested_role === 'reviewer');
-      return `<tr><td>${escapeHtml(item.username || item.email || '-')}</td><td>${escapeHtml(formatTimestamp(item.created_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve" ${blocked || blockApproval ? 'disabled title="默认开发者账号仅可审批开发者加入申请"' : ''}>批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div>${blocked || blockApproval ? '<small class="muted">默认开发者账号仅可审批开发者加入申请</small>' : ''}</td></tr>`;
+      return `<tr><td>${escapeHtml(item.username || item.email || '-')}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.created_at))}</td><td><div class="actions"><button data-id="${item.id}" data-action="approve" ${blocked || blockApproval ? 'disabled title="默认开发者账号仅可审批开发者加入申请"' : ''}>批准</button><button class="danger" data-id="${item.id}" data-action="reject">拒绝</button></div>${blocked || blockApproval ? '<small class="muted">默认开发者账号仅可审批开发者加入申请</small>' : ''}</td></tr>`;
     }).join('') : rowMessage('暂无待审批申请', 3);
   table.querySelectorAll('button[data-action]:not(:disabled)').forEach((button) => button.addEventListener('click', async () => {
     const status = document.querySelector('#requestStatus');
@@ -227,7 +227,7 @@ function headcountCard(label, count, change) {
 
 function personnelRow(item) {
   const notes = item.notes || '';
-  return `<tr><td>${escapeHtml(item.username || '-')}</td><td><span class="status-badge ${item.is_active ? 'status-verified' : 'status-pending'}">${item.is_active ? '启用' : '禁用'}</span></td><td>${item.is_default_account ? '是' : '否'}</td><td>${escapeHtml(formatTimestamp(item.last_login_at))}</td><td><button class="flag-button ${item.flagged ? 'is-flagged' : ''}" data-user="${item.user_id}" data-flagged="${Boolean(item.flagged)}" title="切换特别关注" aria-label="切换特别关注">${item.flagged ? '★' : '☆'}</button></td><td class="notes-cell" data-user-notes="${item.user_id}" data-notes-value="${escapeHtml(notes)}">${notesViewMarkup(item.user_id, notes)}</td></tr>`;
+  return `<tr><td>${escapeHtml(item.username || '-')}</td><td><span class="status-badge ${item.is_active ? 'status-verified' : 'status-pending'}">${item.is_active ? '启用' : '禁用'}</span></td><td>${item.is_default_account ? '是' : '否'}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.last_login_at))}</td><td><button class="flag-button ${item.flagged ? 'is-flagged' : ''}" data-user="${item.user_id}" data-flagged="${Boolean(item.flagged)}" title="切换特别关注" aria-label="切换特别关注">${item.flagged ? '★' : '☆'}</button></td><td class="notes-cell" data-user-notes="${item.user_id}" data-notes-value="${escapeHtml(notes)}">${notesViewMarkup(item.user_id, notes)}</td></tr>`;
 }
 
 function notesViewMarkup(userId, notes) {
@@ -401,7 +401,7 @@ async function handleCreateOrganization(event) {
 async function loadMetrics() {
   metricsGrid.innerHTML='<p class="muted">加载中...</p>';
   try {
-    const data=await API.reviewerMetrics(); window.latestMetrics=data; metricsTimestamp.textContent=`数据截至 ${formatTimestamp(data.stats_since)}`;
+    const data=await API.reviewerMetrics(); window.latestMetrics=data; metricsTimestamp.textContent=`数据截至 ${ZhitianTime.formatLocalTime(data.stats_since)}`;
     const requests=data.requests||{}, calls=data.model_calls||{}, errors=data.provider_errors?.deepseek||{};
     const cards=[['请求总数',requests.total],['成功',requests.success],['降级',requests.degraded],['错误',requests.error],['快速调用',`${calls.fast?.calls||0} / ${calls.fast?.average_elapsed_ms||0}ms`],['专家调用',`${calls.expert?.calls||0} / ${calls.expert?.average_elapsed_ms||0}ms`],['搜索降级',data.search_fallback_count],['输出校验',data.output_anomaly_check_total],['输出异常',data.output_anomaly_flagged_total],['输出校验失败',data.output_anomaly_check_failed_total],['DeepSeek错误',`超时 ${errors.timeout||0} / 限流 ${errors.rate_limit||0} / 其他 ${errors.other||0}`]];
     metricsGrid.innerHTML=cards.map(([label,value])=>`<div class="stat-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value??0)}</strong></div>`).join('');
@@ -416,7 +416,7 @@ function renderTrend(records) {
   const maximum = Math.max(...values, 1);
   const points = values.map((value, index) => `${24 + (672 * index / Math.max(values.length - 1, 1))},${156 - (132 * value / maximum)}`);
   requestTrendChart.innerHTML = recent.length ? `<polyline class="trend-line" points="${points.join(' ')}" />` : '';
-  requestTrendTable.innerHTML = recent.length ? recent.slice().reverse().map((item) => `<tr><td>${escapeHtml(formatTimestamp(item.timestamp))}</td><td>${traceIdCell(item.trace_id)}</td><td>${escapeHtml(item.mode||'-')}</td><td>${Number(item.total_elapsed_ms||0)}ms</td><td>${escapeHtml(item.status||'-')}</td></tr>`).join('') : rowMessage('还没有请求记录。使用一次对话后可回来查看。', 5);
+  requestTrendTable.innerHTML = recent.length ? recent.slice().reverse().map((item) => `<tr><td>${escapeHtml(ZhitianTime.formatLocalTime(item.timestamp))}</td><td>${traceIdCell(item.trace_id)}</td><td>${escapeHtml(item.mode||'-')}</td><td>${Number(item.total_elapsed_ms||0)}ms</td><td>${escapeHtml(item.status||'-')}</td></tr>`).join('') : rowMessage('还没有请求记录。使用一次对话后可回来查看。', 5);
   requestTrendTable.querySelectorAll('.trace-copy').forEach((button) => button.addEventListener('click', () => copyTraceId(button)));
 }
 
@@ -452,7 +452,6 @@ async function copyTraceId(button) {
 }
 function rowMessage(text,colspan){return `<tr><td colspan="${colspan}" class="muted">${escapeHtml(text)}</td></tr>`;}
 function briefError(error){return String(error.message||error).replaceAll('\n',' ').slice(0,120);}
-function formatTimestamp(value){if(!value)return '-';const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString();}
 function escapeHtml(value){return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
 
 // 必须放在文件末尾：initDeveloperPage 会同步用到上方的 const 声明，提前调用会触发暂时性死区错误。
