@@ -69,8 +69,8 @@
         <details class="diagnostics-deck"><summary><span>02 / 辅助检查</span><strong>需要核对结果时，再展开诊断</strong></summary>
         <section id="retrieveDebugPanel" class="panel reviewer-work-panel">
           <div class="section-title"><div><p class="section-kicker">检索检查</p><h2>核对检索结果</h2></div><span class="format-label">不会访问个人记忆</span></div>
-          <p class="section-copy">检查企业文档候选、分数与审核状态；默认仅查询已通过内容。</p>
-          <div class="debug-form"><input id="debugQuery" type="text" placeholder="输入需要验证的问题" /><input id="debugTopK" type="number" min="1" max="20" value="5" aria-label="候选数量" /><label class="debug-checkbox"><input id="debugIncludePending" type="checkbox" />同时检查待审核内容</label><button id="runDebugRetrieve">开始检查</button></div>
+          <p id="debugDefaultDescription" class="section-copy">正在读取聊天候选默认值；默认仅查询已通过内容。</p>
+          <div class="debug-form"><input id="debugQuery" type="text" placeholder="输入需要验证的问题" /><input id="debugTopK" type="number" min="1" max="20" aria-label="候选数量" /><label class="debug-checkbox"><input id="debugIncludePending" type="checkbox" />同时检查待审核内容</label><button id="runDebugRetrieve" disabled>开始检查</button></div>
           <p id="debugThreshold" class="muted"></p><div class="table-wrap"><table><thead><tr><th>来源文件</th><th>文档编号</th><th>审核状态</th><th>片段序号</th><th>向量分数</th><th>标题加分</th><th>最终分数</th></tr></thead><tbody id="debugRetrieveTable"></tbody></table></div>
         </section>
 
@@ -81,6 +81,6 @@
         </details>
       </main>
     </div>
-    <script src="./config.js"></script><script src="./js/api.js?v=lamp-node-20260930"></script><script src="./js/account-switcher.js?v=lamp-node-20260930"></script><script src="./js/org-lobby.js?v=lamp-node-20260930"></script><script src="./js/time.js?v=utc-local-20261001"></script><script src="./js/reviewer.js?v=utc-local-20261001"></script>
+    <script src="./config.js"></script><script src="./js/api.js?v=presentation-20261004"></script><script src="./js/account-switcher.js?v=lamp-node-20260930"></script><script src="./js/org-lobby.js?v=lamp-node-20260930"></script><script src="./js/time.js?v=utc-local-20261001"></script><script src="./js/reviewer.js?v=presentation-20261004"></script>
   </body>
 </html>

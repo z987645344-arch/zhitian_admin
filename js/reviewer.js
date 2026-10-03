@@ -24,6 +24,7 @@ function initReviewerPage() {
   document.querySelector('#refreshLobby').addEventListener('click', loadLobby);
   document.querySelector('#toggleEnterprisePassword').addEventListener('click', toggleEnterprisePassword);
   loadStats();
+  loadDebugRetrieveConfig();
   loadEmployeeRequests();
   loadEnterprisePassword();
   loadOrgRequests();
@@ -613,11 +614,27 @@ async function deleteDocument(docId, documentName) {
 }
 
 
+async function loadDebugRetrieveConfig() {
+  const input = document.querySelector('#debugTopK');
+  const button = document.querySelector('#runDebugRetrieve');
+  button.disabled = true;
+  try {
+    const data = await API.debugRetrieveConfig();
+    if (!Number.isInteger(data.document_top_k) || data.document_top_k < 1) throw new Error('聊天候选配置无效');
+    input.value = String(data.document_top_k);
+    document.querySelector('#debugDefaultDescription').textContent = `聊天时最多取前 ${data.document_top_k} 个过线资料；短追问可能另补充前文资料。本表展示全部候选，不做阈值过滤。`;
+    button.disabled = false;
+  } catch (error) {
+    document.querySelector('#debugDefaultDescription').textContent = `候选默认值加载失败：${briefError(error)}。请刷新后重试。`;
+  }
+}
+
 async function runDebugRetrieve() {
+  if (document.querySelector('#runDebugRetrieve').disabled) return;
   const table = document.querySelector('#debugRetrieveTable');
   const thresholdText = document.querySelector('#debugThreshold');
   const query = document.querySelector('#debugQuery').value.trim();
-  const topK = Number(document.querySelector('#debugTopK').value || 5);
+  const topK = Number(document.querySelector('#debugTopK').value);
   const includePending = document.querySelector('#debugIncludePending').checked;
   if (!query) {
     table.innerHTML = rowMessage('请输入检索内容', 7);

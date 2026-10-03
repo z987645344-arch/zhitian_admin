@@ -248,7 +248,8 @@
       { method: 'GET' },
     ),
     deleteDocument: (docId) => request(`/documents/${docId}`, { method: 'DELETE' }),
-    debugRetrieve: (query, topK = 5, includePending = false) =>
+    debugRetrieveConfig: () => request('/debug/retrieve/config'),
+    debugRetrieve: (query, topK, includePending = false) =>
       request('/debug/retrieve', {
         method: 'POST',
         body: JSON.stringify({ query, top_k: topK, include_pending: includePending }),
