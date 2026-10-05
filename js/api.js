@@ -18,6 +18,26 @@
     return result;
   }
 
+  // 仅提取后端可读文案；绝不把对象、输入值或完整JSON当成报错展示。
+  function errorMessage(value, fallback = '请求失败，请稍后重试') {
+    function readable(item, depth = 0) {
+      if (depth > 4 || item == null) return '';
+      if (typeof item === 'string') {
+        const text = item.trim();
+        return text && text !== '[object Object]' ? text : '';
+      }
+      if (Array.isArray(item)) return item.map(part => readable(part, depth + 1)).filter(Boolean).join('；');
+      if (typeof item === 'object') {
+        for (const key of ['detail', 'message', 'msg']) {
+          const text = readable(item[key], depth + 1);
+          if (text) return text;
+        }
+      }
+      return '';
+    }
+    return readable(value) || fallback;
+  }
+
   async function request(path, options = {}) {
     const { skipAuthRedirect = false, json = options.body !== undefined, ...fetchOptions } = options;
     const response = await fetch(`${backendUrl}${path}`, {
@@ -41,7 +61,7 @@
     const text = await response.text();
     const data = text ? JSON.parse(text) : {};
     if (!response.ok) {
-      throw new Error(data.detail || `请求失败：HTTP ${response.status}`);
+      throw new Error(errorMessage(data.detail, `请求失败：HTTP ${response.status}`));
     }
     return data;
   }
@@ -127,6 +147,7 @@
   }
 
   return {
+    errorMessage,
     backendUrl,
     request,
     logout,

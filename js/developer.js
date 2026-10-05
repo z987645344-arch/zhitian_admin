@@ -451,7 +451,7 @@ async function copyTraceId(button) {
   }
 }
 function rowMessage(text,colspan){return `<tr><td colspan="${colspan}" class="muted">${escapeHtml(text)}</td></tr>`;}
-function briefError(error){return String(error.message||error).replaceAll('\n',' ').slice(0,120);}
+function briefError(error){return API.errorMessage(error).replaceAll('\n',' ').slice(0,120);}
 function escapeHtml(value){return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
 
 // 必须放在文件末尾：initDeveloperPage 会同步用到上方的 const 声明，提前调用会触发暂时性死区错误。

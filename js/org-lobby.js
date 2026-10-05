@@ -20,7 +20,7 @@ const OrgLobby = (() => {
   }
 
   function briefError(error) {
-    const text = String(error.message || error).replaceAll('\n', ' ');
+    const text = API.errorMessage(error).replaceAll('\n', ' ');
     return text.length > 90 ? `${text.slice(0, 90)}...` : text;
   }
 

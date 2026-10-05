@@ -189,7 +189,7 @@ async function trackIngestProgress(result, messageEl, resultBox) {
     `;
   } else {
     messageEl.textContent = (finalState && finalState.error_message)
-      ? `入库失败：${finalState.error_message}`
+      ? `入库失败：${API.errorMessage(finalState.error_message)}`
       : '入库未完成，请重试';
     resultBox.innerHTML = '';
     resultBox.classList.add('hidden');
@@ -351,7 +351,7 @@ function rowMessage(text, colspan) {
 }
 
 function briefError(error) {
-  const text = String(error.message || error).replaceAll('\n', ' ');
+  const text = API.errorMessage(error).replaceAll('\n', ' ');
   return text.length > 90 ? `${text.slice(0, 90)}...` : text;
 }
 

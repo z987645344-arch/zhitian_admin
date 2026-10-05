@@ -38,9 +38,9 @@ sendCodeButton.addEventListener('click', async () => {
   sendCodeButton.disabled = true;
   try {
     const result = await API.sendVerificationCode(email, 'register', enterprisePassword);
-    message.textContent = result.detail;
+    message.textContent = API.errorMessage(result.detail, '操作已完成');
   } catch (error) {
-    message.textContent = String(error.message || error);
+    message.textContent = API.errorMessage(error);
   } finally { sendCodeButton.disabled = false; }
 });
 
@@ -75,6 +75,6 @@ form.addEventListener('submit', async (event) => {
     });
     message.textContent = `申请已提交，等待审批。申请ID：${result.id}`;
   } catch (error) {
-    message.textContent = String(error.message || error);
+    message.textContent = API.errorMessage(error);
   } finally { submitButton.disabled = false; }
 });
