@@ -96,6 +96,8 @@ python -m http.server 8080
 - 指标来自后端进程内存，服务重启后清零，不跨 worker/实例聚合。
 - 生产公网部署应使用 HTTPS，并根据部署环境重新评估 Token 存储策略。
 
-## License
+## 版权说明 / License
 
-当前仓库未附带开源许可证，默认保留全部权利。
+本项目为作者个人作品，**保留所有权利**，公开仅供浏览与评估，未经许可不得复制、部署或用于对外服务。详见 [LICENSE](LICENSE)。
+
+This is a personal project. **All rights reserved.** Public for viewing and evaluation only; see [LICENSE](LICENSE).
