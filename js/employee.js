@@ -1,3 +1,6 @@
+let maxUploadMB = 5;
+let uploadLimitNotice = '正在读取上传上限，暂按5MB保护';
+
 if (API.ensureRole(['employee', 'reviewer'])) {
   initEmployeePage();
 }
@@ -17,6 +20,7 @@ function initEmployeePage() {
   document.querySelector('#backToEmployeeOrganizations').addEventListener('click', showEmployeeOrganizationList);
   document.querySelector('#refreshLobby').addEventListener('click', loadLobby);
   loadLobby();
+  loadUploadLimit();
 }
 
 // 当前组织的文档列表与组织卡片统计始终一起刷新，避免上传/撤销后计数过期。
@@ -119,10 +123,22 @@ function applyWorkGate(joinedOrganizations) {
   loadJoinedOrganizations(organizations);
 }
 
-// F36：与后端config.MAX_UPLOAD_SIZE_MB保持一致，改动时需同步。
-// 2026-08-11按用户体验反馈放宽到5MB；服务端仍以2000切片作为处理时长护栏，
-// 前端体积校验只是廉价预筛，正文过多时服务端会明确提示拆分。
-const MAX_UPLOAD_MB = 5;
+// 与网页同源读取；网络失败只使用保守5MB并说明原因，后端仍为权威边界。
+async function loadUploadLimit() {
+  try {
+    const result = await API.fileEngines();
+    const value = Number(result.max_upload_size_mb);
+    if (!Number.isFinite(value) || value <= 0) throw new Error('上限配置无效');
+    maxUploadMB = value;
+    uploadLimitNotice = '';
+  } catch (error) {
+    maxUploadMB = 5;
+    uploadLimitNotice = `无法读取上传上限（${briefError(error)}），暂按5MB限制`;
+  }
+  const label = document.querySelector('#uploadLimitLabel');
+  if (label) label.textContent = `单个文件不超过${maxUploadMB}MB` + (uploadLimitNotice ? '（保守限制）' : '');
+  showConversionHint({target: document.querySelector('#documentFile')});
+}
 
 function formatSize(bytes) {
   return bytes >= 1024 * 1024
@@ -136,16 +152,16 @@ function showConversionHint(event) {
   const extension = file && file.name.includes('.') ? `.${file.name.split('.').pop().toLowerCase()}` : '';
   const convertible = new Set(['.doc', '.xls', '.xlsx', '.ppt', '.pptx']);
   const hints = [];
-  if (file && file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+  if (file && file.size > maxUploadMB * 1024 * 1024) {
     // 前端提前拦住，不让请求发出去才被后端拒绝
-    message.textContent = `文件 ${formatSize(file.size)}，超出 ${MAX_UPLOAD_MB}MB 上限，请拆分后再上传`;
+    message.textContent = `文件 ${formatSize(file.size)}，超出 ${maxUploadMB}MB 上限，请拆分后再上传` + (uploadLimitNotice ? `；${uploadLimitNotice}` : '');
     message.classList.remove('success');
     return;
   }
   if (convertible.has(extension)) hints.push('该格式将自动转换后上传');
   // 入库需要为全文生成向量，体积越大越慢；这里给一个量级提示而非精确预测
   if (file && file.size > 512 * 1024) hints.push('文件较大，入库可能需要 1 分钟以上，请勿关闭页面');
-  message.textContent = hints.join('；');
+  message.textContent = [uploadLimitNotice, ...hints].filter(Boolean).join('；');
   message.classList.remove('success');
 }
 
@@ -207,8 +223,9 @@ async function uploadDocument(event) {
   const file = input.files && input.files[0];
   if (!file || !selectedEmployeeOrganization) return;
   // 提交前再拦一次：避免选文件后才超限、或未触发change事件的情况
-  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
-    message.textContent = `文件 ${formatSize(file.size)}，超出 ${MAX_UPLOAD_MB}MB 上限，请拆分后再上传`;
+  await loadUploadLimit();
+  if (file.size > maxUploadMB * 1024 * 1024) {
+    message.textContent = `文件 ${formatSize(file.size)}，超出 ${maxUploadMB}MB 上限，请拆分后再上传` + (uploadLimitNotice ? `；${uploadLimitNotice}` : '');
     message.classList.remove('success');
     return;
   }

@@ -56,8 +56,8 @@
 
             <div class="content-grid two-column">
               <section id="upload-section" class="organization-detail-section feature-panel">
-                <div class="section-title"><div><p class="section-kicker">文件提交</p><h2>上传文档</h2></div><span class="format-label">单个文件不超过5MB</span></div>
-                <p class="section-copy">文件将直接归入当前组织；单个文件不超过 5MB。正文切分后最多 2,000 个片段，内容过多时请拆分上传。</p>
+                <div class="section-title"><div><p class="section-kicker">文件提交</p><h2>上传文档</h2></div><span id="uploadLimitLabel" class="format-label">正在读取上限，暂按5MB</span></div>
+                <p class="section-copy">文件将直接归入当前组织；大小上限以上方服务器配置为准。正文切分后最多 2,000 个片段，内容过多时请拆分上传。</p>
                 <form id="uploadForm" class="upload-zone">
                   <input id="documentFile" type="file" accept=".txt,.md,.pdf,.docx,.doc,.xls,.xlsx,.ppt,.pptx" required />
                   <button id="uploadButton" type="submit">上传并提交审核</button>
@@ -86,6 +86,6 @@
         </section>
       </main>
     </div>
-    <script src="./config.js"></script><script src="./js/api.js?v=upload-error-fix-20261005"></script><script src="./js/account-switcher.js?v=lamp-node-20260930"></script><script src="./js/org-lobby.js?v=upload-error-fix-20261005"></script><script src="./js/time.js?v=utc-local-20261001"></script><script src="./js/employee.js?v=upload-error-fix-20261005"></script>
+    <script src="./config.js"></script><script src="./js/api.js?v=edit-upload-fix-20261009"></script><script src="./js/account-switcher.js?v=lamp-node-20260930"></script><script src="./js/org-lobby.js?v=upload-error-fix-20261005"></script><script src="./js/time.js?v=utc-local-20261001"></script><script src="./js/employee.js?v=upload-limit-20261009"></script>
   </body>
 </html>

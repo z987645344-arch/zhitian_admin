@@ -59,7 +59,11 @@
     }
 
     const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; }
+    catch (error) {
+      throw new Error(response.status === 413 ? '文件过大，请拆分后再上传（单个文件上限50MB）' : `请求失败：HTTP ${response.status}`);
+    }
     if (!response.ok) {
       throw new Error(errorMessage(data.detail, `请求失败：HTTP ${response.status}`));
     }
@@ -270,6 +274,7 @@
     ),
     deleteDocument: (docId) => request(`/documents/${docId}`, { method: 'DELETE' }),
     debugRetrieveConfig: () => request('/debug/retrieve/config'),
+    fileEngines: () => request('/file-processing/engines'),
     debugRetrieve: (query, topK, includePending = false) =>
       request('/debug/retrieve', {
         method: 'POST',
