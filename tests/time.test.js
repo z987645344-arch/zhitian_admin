@@ -3,6 +3,28 @@ const assert = require('node:assert/strict');
 process.env.TZ = 'Asia/Shanghai';
 const { parseTimestamp, formatLocalTime } = require('../js/time.js');
 
+test('登录和所有角色页包含逐字相同的版权行', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  for (const page of ['login', 'employee', 'reviewer', 'developer']) {
+    const html = fs.readFileSync(path.join(__dirname, `../${page}.html`), 'utf8');
+    assert.equal(html.split('© 2026 知了 · 保留所有权利。').length - 1, 1);
+    assert.match(html, /<footer class="[^"]*copyright-line/);
+    assert.match(html, /style\.css\?v=copyright-20261009/);
+  }
+});
+
+test('管理后台robots拒绝全部爬虫且无域名或Sitemap', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const read = name => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
+  const robots = read('robots.txt');
+  assert.equal(robots.replace(/\r/g, '').trim(), 'User-agent: *\nDisallow: /');
+  assert.doesNotMatch(robots, /sitemap|https?:|www\.|[\w-]+\.[a-z]{2,}/i);
+  assert.match(read('Dockerfile'), /COPY --chown=nginx:nginx robots\.txt \/usr\/share\/nginx\/html\/robots\.txt/);
+  assert.match(read('nginx.conf'), /location \/ \{\s*try_files \$uri \$uri\/ =404;/);
+});
+
 test('Asia/Shanghai: 带Z和旧UTC-naive都显示10:46', () => {
   assert.equal(new Date('2026-09-30T02:46:13Z').getTimezoneOffset(), -480);
   const legacy = '2026-09-30T02:46:13';

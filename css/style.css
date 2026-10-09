@@ -685,6 +685,8 @@ body::after { z-index: 59; background: var(--vignette); }
 input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px var(--primary-soft), 0 0 22px -8px var(--amber-glow); }
 .trend-line { filter: drop-shadow(0 0 4px var(--amber-glow)); }
 
+.copyright-line { margin: 24px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; text-align: center; overflow-wrap: anywhere; }
+
 /* 头像图标自带外框与内圆：去掉底色与边框，只保留光晕 */
 .brand-mark,
 .auth-intro .brand-mark,
