@@ -30,7 +30,7 @@
 
         <section id="metricsPanel" class="panel"><div class="section-title"><div><p class="section-kicker">运行监测</p><h2>系统运行状态</h2></div><button id="refreshMetrics" class="secondary">刷新指标</button></div><p id="metricsTimestamp" class="muted">数据截至 -</p><div id="metricsGrid" class="stats-grid metrics-grid"></div><section class="developer-section"><h3>各阶段耗时</h3><div class="table-wrap"><table><thead><tr><th>阶段</th><th>平均耗时</th><th>调用次数</th></tr></thead><tbody id="stageTimingTable"></tbody></table></div></section><section class="developer-section"><h3>请求追踪明细</h3><div class="inline-form"><input id="traceIdQuery" type="text" placeholder="输入追踪编号" /><button id="traceIdSearch" class="secondary">查询</button></div><div id="traceDetail" class="result-box hidden"></div></section><section class="developer-section"><h3>请求耗时趋势</h3><svg id="requestTrendChart" class="trend-chart" viewBox="0 0 720 180" role="img" aria-label="请求耗时趋势"></svg><div class="table-wrap"><table><thead><tr><th>时间</th><th>追踪编号</th><th>模式</th><th>总耗时</th><th>状态</th></tr></thead><tbody id="requestTrendTable"></tbody></table></div></section><p class="system-note">当前数据保存在服务进程内，服务重启后清零；多个服务实例之间不合并统计。</p></section>
         </details>
-        <footer class="copyright-line">© 2026 知了 · 保留所有权利。</footer>
+        <footer class="copyright-line">© 2026 知了 · 保留所有权利</footer>
       </main>
     </div>
     <dialog id="systemModulesConfirm" class="confirm-dialog"><h3>确认保存系统提示词模块？</h3><p class="muted">确定后，新内容将从下一次模型请求开始生效。</p><div class="dialog-actions"><button id="cancelSystemModulesSave" class="secondary">取消</button><button id="discardSystemModules" class="danger">放弃</button><button id="confirmSystemModulesSave">确定</button></div></dialog>

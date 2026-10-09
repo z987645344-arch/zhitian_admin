@@ -8,7 +8,7 @@ test('登录和所有角色页包含逐字相同的版权行', () => {
   const path = require('node:path');
   for (const page of ['login', 'employee', 'reviewer', 'developer']) {
     const html = fs.readFileSync(path.join(__dirname, `../${page}.html`), 'utf8');
-    assert.equal(html.split('© 2026 知了 · 保留所有权利。').length - 1, 1);
+    assert.equal(html.split('© 2026 知了 · 保留所有权利</footer>').length - 1, 1);
     assert.match(html, /<footer class="[^"]*copyright-line/);
     assert.match(html, /style\.css\?v=copyright-20261009/);
   }
