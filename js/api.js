@@ -181,6 +181,7 @@
     developerRegistrationRequests: () => request('/developer/registration-requests', { method: 'GET' }),
     reviewDeveloperRegistration: (id, action) => request(`/developer/registration-requests/${id}/${action}`, { method: 'POST' }),
     developerUsers: () => request('/developer/users', { method: 'GET' }),
+    developerEnterpriseCustomers: () => request('/developer/enterprise-api/customers'),
     revokeEnterpriseApi: (id) => request(`/developer/users/${encodeURIComponent(id)}/enterprise-api/revoke`, { method: 'POST' }),
     revokeAllEnterpriseApi: () => request('/developer/enterprise-api/revoke-all', {
       method: 'POST', body: JSON.stringify({ confirm: 'REVOKE_ALL_ENTERPRISE_API' }),

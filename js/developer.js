@@ -1,4 +1,5 @@
 let currentDeveloper = null;
+let enterpriseQuotaCustomers = [];
 const guidanceModule = document.querySelector('#guidanceModule');
 const toneModule = document.querySelector('#toneModule');
 const forbiddenModule = document.querySelector('#forbiddenModule');
@@ -44,26 +45,30 @@ function initDeveloperPage() {
 }
 
 function enterpriseQuotaUserRow(item) {
-  const source = { enterprise: '企业', personal: '个人' }[item.api_quota_source] || '未配置';
-  const role = { customer: '客户', employee: '员工', reviewer: '审核员', developer: '开发者' }[item.role] || '-';
-  const action = item.enterprise_api_authorized_at
-    ? `<button class="danger" data-revoke-enterprise="${escapeHtml(item.user_id)}" data-user-label="${escapeHtml(item.username || '-')}">回收企业授权</button>`
-    : '<span class="muted">未授权</span>';
-  return `<tr><td>${escapeHtml(item.username || '-')}</td><td>${role}</td><td>${source}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.enterprise_api_authorized_at))}</td><td>${action}</td></tr>`;
+  const account = escapeHtml(item.masked_account || '-');
+  const action = `<button class="danger" data-revoke-enterprise="${escapeHtml(item.user_id)}" data-user-label="${account}">回收</button>`;
+  return `<tr><td>${account}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.enterprise_api_authorized_at))}</td><td>${action}</td></tr>`;
+}
+
+function renderEnterpriseQuotaCustomers() {
+  const table = document.querySelector('#enterpriseQuotaUsersTable');
+  document.querySelector('#enterpriseQuotaTitle').textContent = `企业授权中的客户（${enterpriseQuotaCustomers.length}）`;
+  table.innerHTML = enterpriseQuotaCustomers.length
+    ? enterpriseQuotaCustomers.map(enterpriseQuotaUserRow).join('') : rowMessage('暂无企业授权中的客户', 3);
+  table.querySelectorAll('[data-revoke-enterprise]').forEach((button) =>
+    button.addEventListener('click', () => revokeEnterpriseApiForUser(button)));
 }
 
 async function loadEnterpriseQuotaUsers() {
   const table = document.querySelector('#enterpriseQuotaUsersTable');
-  table.innerHTML = rowMessage('加载中...', 5);
+  table.innerHTML = rowMessage('加载中...', 3);
   try {
-    const data = await API.developerUsers();
-    const users = Array.isArray(data.users) ? data.users : [];
-    table.innerHTML = users.length ? users.map(enterpriseQuotaUserRow).join('') : rowMessage('暂无用户', 5);
-    table.querySelectorAll('[data-revoke-enterprise]').forEach((button) =>
-      button.addEventListener('click', () => revokeEnterpriseApiForUser(button)));
+    const data = await API.developerEnterpriseCustomers();
+    enterpriseQuotaCustomers = Array.isArray(data.customers) ? data.customers : [];
+    renderEnterpriseQuotaCustomers();
     return true;
   } catch (error) {
-    table.innerHTML = rowMessage(briefError(error), 5);
+    table.innerHTML = rowMessage(briefError(error), 3);
     return false;
   }
 }
@@ -74,6 +79,8 @@ async function revokeEnterpriseApiForUser(button) {
   button.disabled = true;
   try {
     const data = await API.revokeEnterpriseApi(button.dataset.revokeEnterprise);
+    enterpriseQuotaCustomers = enterpriseQuotaCustomers.filter(item => item.user_id !== button.dataset.revokeEnterprise);
+    renderEnterpriseQuotaCustomers();
     const refreshed = await loadEnterpriseQuotaUsers();
     status.textContent = (data.revoked ? '企业授权已回收' : '该用户没有企业额度授权')
       + (refreshed ? '' : '；列表刷新失败，请手动刷新');
@@ -83,7 +90,7 @@ async function revokeEnterpriseApiForUser(button) {
 
 async function revokeAllEnterpriseApi() {
   const button = document.querySelector('#revokeAllEnterpriseApi');
-  if (button.disabled || !window.confirm('确认回收全部用户的企业授权？正在进行的请求可完成，之后须重新授权或配置个人密钥。')) return;
+  if (button.disabled || !window.confirm('确认回收全部客户的企业授权？正在进行的请求可完成，之后须重新授权或配置个人密钥。')) return;
   const status = document.querySelector('#enterpriseQuotaStatus');
   if (window.prompt('请输入“确认回收”以继续：') !== '确认回收') {
     status.textContent = '未确认，未执行回收';

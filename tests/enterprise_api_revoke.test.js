@@ -9,8 +9,9 @@ const html = fs.readFileSync(path.join(__dirname, '../developer.html'), 'utf8');
 const apiSource = fs.readFileSync(path.join(__dirname, '../js/api.js'), 'utf8');
 
 function environment({ confirm = true, prompt = '确认回收', users = [], error = false } = {}) {
+  let customers = [...users];
   const calls = { single: [], bulk: 0, list: 0, confirm: [], prompt: [] };
-  const status = { textContent: '' }, bulk = { disabled: false }, table = { innerHTML: '', buttons: [],
+  const title = { textContent: '' }, status = { textContent: '' }, bulk = { disabled: false }, table = { innerHTML: '', buttons: [],
     querySelectorAll() {
       this.buttons = [...this.innerHTML.matchAll(/data-revoke-enterprise="([^"]*)" data-user-label="([^"]*)"/g)]
         .map(match => ({ dataset: { revokeEnterprise: match[1], userLabel: match[2] }, disabled: false,
@@ -23,42 +24,47 @@ function environment({ confirm = true, prompt = '确认回收', users = [], erro
       prompt: message => { calls.prompt.push(message); return prompt; },
     },
     document: { querySelector: selector => ({ '#enterpriseQuotaUsersTable': table,
-      '#enterpriseQuotaStatus': status, '#revokeAllEnterpriseApi': bulk }[selector] || {}) },
+      '#enterpriseQuotaStatus': status, '#enterpriseQuotaTitle': title, '#revokeAllEnterpriseApi': bulk }[selector] || {}) },
     ZhitianTime: { formatLocalTime: value => value ? 'LOCAL:' + value : '-' },
     API: {
       ensureRole: () => false,
       errorMessage: error => error.message,
-      developerUsers: async () => { calls.list++; return { users }; },
-      revokeEnterpriseApi: async id => { calls.single.push(id); if (error) throw Error('请求失败'); return { revoked: true }; },
-      revokeAllEnterpriseApi: async () => { calls.bulk++; if (error) throw Error('请求失败'); return { revoked_count: 3 }; },
+      developerUsers: async () => { throw Error('授权表不得读取完整用户列表'); },
+      developerEnterpriseCustomers: async () => { calls.list++; return { customers }; },
+      revokeEnterpriseApi: async id => { calls.single.push(id); if (error) throw Error('请求失败');
+        customers = customers.filter(item => item.user_id !== id); return { revoked: true }; },
+      revokeAllEnterpriseApi: async () => { calls.bulk++; if (error) throw Error('请求失败'); customers = []; return { revoked_count: 3 }; },
     },
   });
   vm.runInContext(source, context);
-  return { calls, status, bulk, table, context, fn: name => vm.runInContext(name, context) };
+  return { calls, status, title, bulk, table, context, fn: name => vm.runInContext(name, context) };
 }
 
-test('全部用户列表显示新增两列，仅已授权用户有回收按钮，字段安全转义', async () => {
+test('授权客户表只有账号授权时间操作三列，字段安全转义，回收后移除', async () => {
   const users = [
-    { user_id: 'u1', username: '<img onerror="bad">', role: 'customer', api_quota_source: 'enterprise', enterprise_api_authorized_at: '2026-10-12T00:00:00Z' },
-    { user_id: 'u2', username: 'personal', role: 'employee', api_quota_source: 'personal', enterprise_api_authorized_at: '2026-10-11T00:00:00Z' },
-    { user_id: 'u3', username: 'unconfigured', role: 'reviewer', api_quota_source: null, enterprise_api_authorized_at: null },
+    { user_id: 'u1', masked_account: '<img****>', enterprise_api_authorized_at: '2026-10-12T00:00:00Z' },
+    { user_id: 'u2', masked_account: '12****89@example.com', enterprise_api_authorized_at: '2026-10-11T00:00:00Z' },
   ];
   const env = environment({ users });
   assert.equal(await env.fn('loadEnterpriseQuotaUsers')(), true);
-  assert.match(html, /<th>额度来源<\/th><th>企业授权时间<\/th>/);
+  assert.match(html, /<th>账号<\/th><th>授权时间<\/th><th>操作<\/th>/);
   assert.match(html, /id="revokeAllEnterpriseApi"[^>]*>一键回收全部企业授权/);
-  assert.match(env.table.innerHTML, /<td>企业<\/td>/);
-  assert.match(env.table.innerHTML, /<td>个人<\/td>/);
-  assert.match(env.table.innerHTML, /<td>未配置<\/td>/);
+  assert.match(env.table.innerHTML, /<td>12\*\*\*\*89@example.com<\/td>/);
+  assert.doesNotMatch(env.table.innerHTML, /<td>(企业|个人|未配置|员工|客户)<\/td>/);
+  assert.equal(env.title.textContent, '企业授权中的客户（2）');
   assert.match(env.table.innerHTML, /LOCAL:2026-10-12T00:00:00Z/);
   assert.equal(env.table.buttons.length, 2);
   assert.doesNotMatch(env.table.innerHTML, /<img|<script/);
   assert.match(env.table.innerHTML, /&lt;img/);
-  await env.table.buttons[0].click();
+  const originalButton = env.table.buttons[0];
+  await originalButton.click();
   assert.deepEqual(env.calls.single, ['u1']);
   assert.equal(env.calls.list, 2);
   assert.equal(env.status.textContent, '企业授权已回收');
   assert.equal(env.table.buttons[0].disabled, false);
+  assert.equal(originalButton.disabled, false);
+  assert.equal(env.title.textContent, '企业授权中的客户（1）');
+  assert.doesNotMatch(env.table.innerHTML, /data-revoke-enterprise="u1"/);
   assert.match(env.calls.confirm[0], /确认回收/);
 });
 
@@ -86,6 +92,7 @@ test('全部回收正确二次确认后发一次请求，显示人数并刷新',
   const env = environment();
   await env.fn('revokeAllEnterpriseApi')();
   assert.equal(env.calls.confirm.length, 1);
+  assert.match(env.calls.confirm[0], /^确认回收全部客户的企业授权？/);
   assert.equal(env.calls.prompt.length, 1);
   assert.equal(env.calls.bulk, 1);
   assert.equal(env.calls.list, 1);
@@ -127,4 +134,41 @@ test('API请求使用鉴权、编码用户ID和精确确认字段，不发送密
   assert.equal(requests[1][0], '/api/developer/enterprise-api/revoke-all');
   assert.deepEqual(JSON.parse(requests[1][1].body), { confirm: 'REVOKE_ALL_ENTERPRISE_API' });
   for (const [, options] of requests) assert.equal(options.headers.Authorization, 'Bearer test-token');
+});
+
+test('空授权表显示零人数与专用提示', async () => {
+  const env = environment();
+  assert.equal(await env.fn('loadEnterpriseQuotaUsers')(), true);
+  assert.equal(env.title.textContent, '企业授权中的客户（0）');
+  assert.match(env.table.innerHTML, /暂无企业授权中的客户/);
+  assert.equal(env.table.buttons.length, 0);
+});
+
+test('只渲染专用接口返回的打码账号，确认框也不含完整邮箱', async () => {
+  const env = environment({ users: [{ user_id: 'only-row', masked_account: '12****89@example.com',
+    enterprise_api_authorized_at: '2026-10-12T00:00:00Z' }] });
+  await env.fn('loadEnterpriseQuotaUsers')();
+  assert.equal(env.table.buttons.length, 1);
+  assert.doesNotMatch(env.table.innerHTML, /123456789@example\.com/);
+  await env.table.buttons[0].click();
+  assert.match(env.calls.confirm[0], /12\*\*\*\*89@example\.com/);
+  assert.doesNotMatch(env.calls.confirm[0], /123456789@example\.com/);
+  assert.equal(env.title.textContent, '企业授权中的客户（0）');
+  assert.match(env.table.innerHTML, /暂无企业授权中的客户/);
+});
+
+test('专用客户列表API是只读鉴权请求', async () => {
+  const requests = [];
+  const context = vm.createContext({ window: {}, localStorage: { getItem: () => 'test-token' },
+    fetch: async (url, options) => {
+      requests.push([url, options]);
+      return { ok: true, status: 200, text: async () => JSON.stringify({ customers: [] }) };
+    } });
+  vm.runInContext(apiSource, context);
+  await vm.runInContext('API', context).developerEnterpriseCustomers();
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0][0], '/api/developer/enterprise-api/customers');
+  assert.equal(requests[0][1].method, undefined);
+  assert.equal(requests[0][1].body, undefined);
+  assert.equal(requests[0][1].headers.Authorization, 'Bearer test-token');
 });
