@@ -19,7 +19,9 @@ function initDeveloperPage() {
   AccountSwitcher.mount();
   document.querySelector('#logoutButton').addEventListener('click', () => AccountSwitcher.handleLogout());
   document.querySelector('#refreshRequests').addEventListener('click', loadRequests);
-  document.querySelector('#refreshUsers').addEventListener('click', loadPersonnelOverview);
+  document.querySelector('#refreshUsers').addEventListener('click', () => Promise.all([loadPersonnelOverview(), loadEnterpriseQuotaUsers()]));
+  document.querySelector('#refreshEnterpriseQuotaUsers').addEventListener('click', loadEnterpriseQuotaUsers);
+  document.querySelector('#revokeAllEnterpriseApi').addEventListener('click', revokeAllEnterpriseApi);
   document.querySelector('#toggleEnterprisePassword').addEventListener('click', toggleEnterprisePassword);
   document.querySelector('#refreshEnterprisePassword').addEventListener('click', () => document.querySelector('#enterprisePasswordRefreshConfirm').showModal());
   document.querySelector('#cancelEnterprisePasswordRefresh').addEventListener('click', () => document.querySelector('#enterprisePasswordRefreshConfirm').close());
@@ -38,7 +40,63 @@ function initDeveloperPage() {
   document.querySelector('#editLobbyContent').addEventListener('click', () => setLobbyEditing(true));
   document.querySelector('#saveLobbyContent').addEventListener('click', saveLobbyContent);
   document.querySelector('#saveRateLimits').addEventListener('click', saveRateLimits);
-  Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadOrganizations(), loadOrgMembershipRequests(), loadLobbyContent(), loadModules(), loadRateLimits(), loadMetrics()]).then(loadRequests);
+  Promise.all([loadEnterprisePassword(), loadEmailUsage(), loadPersonnelOverview(), loadEnterpriseQuotaUsers(), loadOrganizations(), loadOrgMembershipRequests(), loadLobbyContent(), loadModules(), loadRateLimits(), loadMetrics()]).then(loadRequests);
+}
+
+function enterpriseQuotaUserRow(item) {
+  const source = { enterprise: '企业', personal: '个人' }[item.api_quota_source] || '未配置';
+  const role = { customer: '客户', employee: '员工', reviewer: '审核员', developer: '开发者' }[item.role] || '-';
+  const action = item.enterprise_api_authorized_at
+    ? `<button class="danger" data-revoke-enterprise="${escapeHtml(item.user_id)}" data-user-label="${escapeHtml(item.username || '-')}">回收企业授权</button>`
+    : '<span class="muted">未授权</span>';
+  return `<tr><td>${escapeHtml(item.username || '-')}</td><td>${role}</td><td>${source}</td><td>${escapeHtml(ZhitianTime.formatLocalTime(item.enterprise_api_authorized_at))}</td><td>${action}</td></tr>`;
+}
+
+async function loadEnterpriseQuotaUsers() {
+  const table = document.querySelector('#enterpriseQuotaUsersTable');
+  table.innerHTML = rowMessage('加载中...', 5);
+  try {
+    const data = await API.developerUsers();
+    const users = Array.isArray(data.users) ? data.users : [];
+    table.innerHTML = users.length ? users.map(enterpriseQuotaUserRow).join('') : rowMessage('暂无用户', 5);
+    table.querySelectorAll('[data-revoke-enterprise]').forEach((button) =>
+      button.addEventListener('click', () => revokeEnterpriseApiForUser(button)));
+    return true;
+  } catch (error) {
+    table.innerHTML = rowMessage(briefError(error), 5);
+    return false;
+  }
+}
+
+async function revokeEnterpriseApiForUser(button) {
+  if (button.disabled || !window.confirm(`确认回收 ${button.dataset.userLabel} 的企业授权？正在进行的请求可完成，之后须重新授权或配置个人密钥。`)) return;
+  const status = document.querySelector('#enterpriseQuotaStatus');
+  button.disabled = true;
+  try {
+    const data = await API.revokeEnterpriseApi(button.dataset.revokeEnterprise);
+    const refreshed = await loadEnterpriseQuotaUsers();
+    status.textContent = (data.revoked ? '企业授权已回收' : '该用户没有企业额度授权')
+      + (refreshed ? '' : '；列表刷新失败，请手动刷新');
+  } catch (error) { status.textContent = briefError(error); }
+  finally { button.disabled = false; }
+}
+
+async function revokeAllEnterpriseApi() {
+  const button = document.querySelector('#revokeAllEnterpriseApi');
+  if (button.disabled || !window.confirm('确认回收全部用户的企业授权？正在进行的请求可完成，之后须重新授权或配置个人密钥。')) return;
+  const status = document.querySelector('#enterpriseQuotaStatus');
+  if (window.prompt('请输入“确认回收”以继续：') !== '确认回收') {
+    status.textContent = '未确认，未执行回收';
+    return;
+  }
+  button.disabled = true;
+  try {
+    const data = await API.revokeAllEnterpriseApi();
+    const refreshed = await loadEnterpriseQuotaUsers();
+    status.textContent = `已回收 ${Number(data.revoked_count || 0)} 人的企业授权`
+      + (refreshed ? '' : '；列表刷新失败，请手动刷新');
+  } catch (error) { status.textContent = briefError(error); }
+  finally { button.disabled = false; }
 }
 
 function toggleEnterprisePassword(event) {

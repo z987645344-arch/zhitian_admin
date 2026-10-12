@@ -181,6 +181,10 @@
     developerRegistrationRequests: () => request('/developer/registration-requests', { method: 'GET' }),
     reviewDeveloperRegistration: (id, action) => request(`/developer/registration-requests/${id}/${action}`, { method: 'POST' }),
     developerUsers: () => request('/developer/users', { method: 'GET' }),
+    revokeEnterpriseApi: (id) => request(`/developer/users/${encodeURIComponent(id)}/enterprise-api/revoke`, { method: 'POST' }),
+    revokeAllEnterpriseApi: () => request('/developer/enterprise-api/revoke-all', {
+      method: 'POST', body: JSON.stringify({ confirm: 'REVOKE_ALL_ENTERPRISE_API' }),
+    }),
     developerEnterprisePassword: () => request('/developer/enterprise-password', { method: 'GET' }),
     refreshEnterprisePassword: () => request('/developer/enterprise-password/refresh', { method: 'POST' }),
     developerEmailUsage: () => request('/developer/email-usage-stats', { method: 'GET' }),
