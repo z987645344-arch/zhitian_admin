@@ -216,7 +216,6 @@
       method: 'POST', body: JSON.stringify({ username, enterprise_password: enterprisePassword, verification_code: verificationCode }), skipAuthRedirect: true,
     }),
     setUserActive: (id, active) => request(`/developer/users/${encodeURIComponent(id)}/${active ? 'enable' : 'disable'}`, { method: 'POST' }),
-    developerAccounts: () => request('/developer/accounts', { method: 'GET' }),
     changeUserRole: (id, targetRole) => request(`/developer/users/${encodeURIComponent(id)}/change_role`, { method: 'POST', body: JSON.stringify({ target_role: targetRole }) }),
     resetUserPassword: (id) => request(`/developer/users/${encodeURIComponent(id)}/reset_password`, { method: 'POST' }),
     uploadDocument: (file, organizationId) => {
