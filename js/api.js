@@ -177,6 +177,12 @@
       skipAuthRedirect: true,
     }),
     reviewerRegistrationRequests: () => request('/reviewer/registration-requests', { method: 'GET' }),
+    organizationMembers: (role) => request(`/${role}/organization-members`),
+    removeOrganizationMember: (role, org, user) => request(`/${role}/organizations/${encodeURIComponent(org)}/members/${encodeURIComponent(user)}/remove`, { method: 'POST' }),
+    deletionOptions: () => request('/account/deletion-options'),
+    requestAccountDeletion: (password, code) => request('/account/deletion', {
+      method: 'POST', body: JSON.stringify({ current_password: password, verification_code: code }),
+    }),
     reviewEmployeeRegistration: (id, action) => request(`/reviewer/registration-requests/${id}/${action}`, { method: 'POST' }),
     developerRegistrationRequests: () => request('/developer/registration-requests', { method: 'GET' }),
     reviewDeveloperRegistration: (id, action) => request(`/developer/registration-requests/${id}/${action}`, { method: 'POST' }),

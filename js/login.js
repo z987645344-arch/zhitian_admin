@@ -57,6 +57,7 @@ form.addEventListener('submit', async (event) => {
 
     API.addOrUpdateSavedAccount(username, data.role, data.token);
     API.setActiveAccount(username, data.role);
+    if (data.detail === '已撤销注销申请') sessionStorage.setItem('lifecycle_notice', data.detail);
     const destinations = {
       employee: './employee.html',
       reviewer: './reviewer.html',
