@@ -186,6 +186,8 @@ async function trackIngestProgress(result, messageEl, resultBox) {
       if (percentEl) percentEl.textContent = `${Number(state.progress || 0)}%`;
       if (state.status === 'processing') {
         messageEl.textContent = `正在建立索引…（${Number(state.processed_chunks || 0)}/${Number(state.total_chunks || 0)} 片段）`;
+      } else if (state.status === 'pending' && Number.isInteger(state.queue_ahead)) {
+        messageEl.textContent = `前面还有 ${state.queue_ahead} 个文件在排队`;
       }
     });
   } catch (error) {
