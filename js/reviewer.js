@@ -417,7 +417,7 @@ async function loadPending() {
             ${escapeHtml(API.filename(item.source || ''))}
             ${item.converted_from ? `<div class="muted">转换来源：${escapeHtml(item.converted_from)}</div>` : ''}
           </td>
-          <td>${escapeHtml(item.uploaded_by || '-')}</td>
+          <td>${escapeHtml(item.uploaded_by_display_name || '-')}</td>
           <td>${organizationLabel(item)}</td>
           <td>${escapeHtml(ZhitianTime.formatLocalTime(item.uploaded_at))}</td>
           <td>
@@ -566,7 +566,7 @@ async function loadDocuments() {
             ${item.converted_from ? `<div class="muted">转换来源：${escapeHtml(item.converted_from)}</div>` : ''}
           </td>
           <td>${Number(item.chunk_count || 0)}</td>
-          <td>${escapeHtml(item.uploaded_by || '-')}</td>
+          <td>${escapeHtml(item.uploaded_by_display_name || '-')}</td>
           <td>${organizationLabel(item)}</td>
           <td>${escapeHtml(ZhitianTime.formatLocalTime(item.reviewed_at))}</td>
           <td data-usage-doc-id="${escapeHtml(item.doc_id || '')}" data-usage-total="${escapeHtml(usageCellMarkup(item))}">${usageCellMarkup(item)}</td>
