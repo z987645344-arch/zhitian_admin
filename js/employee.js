@@ -180,17 +180,30 @@ async function trackIngestProgress(result, messageEl, resultBox) {
   resultBox.classList.remove('hidden');
   const percentEl = resultBox.querySelector('#ingestPercent');
 
+  function showProgress(state) {
+    const stage = state.file_progress && state.file_progress.stage;
+    const queueAhead = Number.isInteger(state.queue_ahead) ? state.queue_ahead : null;
+    if (state.status === 'pending' && queueAhead !== null) {
+      messageEl.textContent = queueAhead === 0
+        ? '即将开始，等待处理位'
+        : `前面还有 ${queueAhead} 个文件在排队`;
+      if (percentEl) percentEl.textContent = '等待中';
+    } else if (state.status === 'processing') {
+      if (stage && !['ingesting', 'validating', 'completed'].includes(stage)) {
+        messageEl.textContent = stage === 'converting' ? '正在转换文档…' : '正在解析文档…';
+        if (percentEl) percentEl.textContent = '处理中';
+      } else {
+        messageEl.textContent = `正在建立索引…（${Number(state.processed_chunks || 0)}/${Number(state.total_chunks || 0)} 片段）`;
+        if (percentEl) percentEl.textContent = `${Number(state.progress || 0)}%`;
+      }
+    }
+  }
+  if (Number.isInteger(result.queue_ahead)) showProgress({status: 'pending', queue_ahead: result.queue_ahead});
+
   let finalState = null;
   try {
     finalState = await API.streamTaskProgress(result.task_id, (state) => {
-      if (percentEl) percentEl.textContent = `${Number(state.progress || 0)}%`;
-      if (state.status === 'processing') {
-        messageEl.textContent = `正在建立索引…（${Number(state.processed_chunks || 0)}/${Number(state.total_chunks || 0)} 片段）`;
-      } else if (state.status === 'pending' && Number.isInteger(state.queue_ahead)) {
-        messageEl.textContent = state.queue_ahead === 0
-          ? '即将开始，等待处理位'
-          : `前面还有 ${state.queue_ahead} 个文件在排队`;
-      }
+      showProgress(state);
     });
   } catch (error) {
     messageEl.textContent = `进度连接中断：${briefError(error)}；可刷新列表确认是否已入库`;
